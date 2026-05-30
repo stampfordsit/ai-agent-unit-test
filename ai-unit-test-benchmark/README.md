@@ -27,7 +27,7 @@ graph TD
     GitHook -->|Triggers| Guardian[Python CI/CD Gate: csharp_test_guardian.py]
     Guardian -->|Spawn Process| CLI
     
-    subgraph Core AI Engine (benchmark_runner)
+    subgraph CoreAIEngine ["Core AI Engine (benchmark_runner)"]
         CLI -->|Generate Candidates| Worker[Worker Agent: GPT-4o-Mini, Llama, DeepSeek]
         Worker -->|Test Suite Sandbox| Sandbox[Execution Sandbox: .NET SDK & Coverlet]
         Sandbox -->|Coverage & Build Output| Evaluator[Evaluator Agent: GPT-4o-Mini / Claude]
@@ -37,7 +37,7 @@ graph TD
 
     CLI -->|Write Isolated logs| Disk[(Local Disk Storage)]
     
-    subgraph Isolated Logging Directories
+    subgraph IsolatedLoggingDirectories ["Isolated Logging Directories"]
         Disk -->|Playground runs| WebDemoDir[results/web_demo/*.json]
         Disk -->|GitHub Ingestion runs| GithubDemoDir[results/github_demo/*.json]
         Disk -->|CI/CD Git hook runs| CicdDir[results/ci_cd/*.json]
