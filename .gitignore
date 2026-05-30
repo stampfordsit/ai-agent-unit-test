@@ -11,6 +11,7 @@ Summary IS.docx
 # 3. Temp files
 temp.zip
 temp_docx/
+temp/
 
 # 4. Runtime & Dependencies
 # Web App

@@ -57,3 +57,20 @@ Open **[http://localhost:3000](http://localhost:3000)** to view the dashboard in
 > If your project resides in a folder path containing `#` (e.g. `.../AI Agent ... in C#/`), Tailwind CSS v4's internal resolver normally crashes with an `ERR_INVALID_ARG_VALUE` error because it inserts null bytes (`\0`) to escape the `#` symbol.
 >
 > We have successfully patched `@tailwindcss/node` and `@tailwindcss/postcss` in the project's `node_modules` to strip these null bytes, allowing Turbopack compilation to proceed smoothly.
+
+---
+
+## 🎓 Graduate Research Project Information
+
+This platform is developed as part of a Master of Engineering (M.Eng.) thesis project at Dhurakij Pundit University.
+
+| Detail | Description |
+| :--- | :--- |
+| **Research Topic** | A Multi-Agent LLM-Based Approach for Automated Unit Test Generation and Optimization in C# Programs <br> *(แนวทางแบบ Multi-Agent ร่วมกับ Large Language Models สำหรับการสร้างและปรับปรุง Unit Test อัตโนมัติในโปรแกรมภาษา C#)* |
+| **Researcher** | **Mr. Attaphon Pungjaree** (Student ID: 645162020028) |
+| **Thesis Advisor** | **Dr. Thanaphat Khankajit** |
+| **Degree** | Master of Engineering (M.Eng.) |
+| **Major** | Artificial Intelligence and Data Engineering |
+| **College** | College of Engineering and Technology |
+| **University** | **Dhurakij Pundit University** (110/1-4 Prachachuen Road Laksi, Bangkok, 10210) |
+| **Contact** | ✉️ Email: [645162020028@dpu.ac.th](mailto:645162020028@dpu.ac.th) <br> 📞 Phone: 095-792-5262 |

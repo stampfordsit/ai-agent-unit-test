@@ -83,3 +83,20 @@ Scans and returns all GitHub Ingestion submissions stored under `results/github_
 
 ### `GET /api/dashboard/ci-cd`
 Scans and returns all Git pre-commit hook runs stored under `results/ci_cd/`, sorted by timestamp descending.
+
+---
+
+## 🎓 Graduate Research Project Information
+
+This platform is developed as part of a Master of Engineering (M.Eng.) thesis project at Dhurakij Pundit University.
+
+| Detail | Description |
+| :--- | :--- |
+| **Research Topic** | A Multi-Agent LLM-Based Approach for Automated Unit Test Generation and Optimization in C# Programs <br> *(แนวทางแบบ Multi-Agent ร่วมกับ Large Language Models สำหรับการสร้างและปรับปรุง Unit Test อัตโนมัติในโปรแกรมภาษา C#)* |
+| **Researcher** | **Mr. Attaphon Pungjaree** (Student ID: 645162020028) |
+| **Thesis Advisor** | **Dr. Thanaphat Khankajit** |
+| **Degree** | Master of Engineering (M.Eng.) |
+| **Major** | Artificial Intelligence and Data Engineering |
+| **College** | College of Engineering and Technology |
+| **University** | **Dhurakij Pundit University** (110/1-4 Prachachuen Road Laksi, Bangkok, 10210) |
+| **Contact** | ✉️ Email: [645162020028@dpu.ac.th](mailto:645162020028@dpu.ac.th) <br> 📞 Phone: 095-792-5262 |
