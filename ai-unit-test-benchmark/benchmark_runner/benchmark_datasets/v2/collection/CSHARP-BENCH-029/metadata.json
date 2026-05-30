@@ -1,0 +1,17 @@
+{
+  "id": "CSHARP-BENCH-029",
+  "category": "collection",
+  "difficulty": "medium",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 1,
+  "expected_assertion_count": 2,
+  "source": "custom",
+  "tags": [
+    "filter",
+    "active-users",
+    "linq"
+  ],
+  "repository": "",
+  "is_executable_reference": true
+}

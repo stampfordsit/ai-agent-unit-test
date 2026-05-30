@@ -1,0 +1,6 @@
+{
+  "benchmark_id": "CSHARP-BENCH-008",
+  "category": "exception",
+  "difficulty": "medium",
+  "method_name": "GetUpperName"
+}

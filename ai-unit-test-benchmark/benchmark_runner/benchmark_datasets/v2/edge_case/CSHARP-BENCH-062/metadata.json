@@ -1,0 +1,17 @@
+{
+  "id": "CSHARP-BENCH-062",
+  "category": "edge_case",
+  "difficulty": "medium",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 2,
+  "expected_assertion_count": 1,
+  "source": "custom",
+  "tags": [
+    "invalid-email",
+    "edge-case",
+    "validation"
+  ],
+  "repository": "",
+  "is_executable_reference": true
+}

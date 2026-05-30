@@ -1,0 +1,6 @@
+{
+  "benchmark_id": "CSHARP-BENCH-009",
+  "category": "string",
+  "difficulty": "easy",
+  "method_name": "FormatName"
+}

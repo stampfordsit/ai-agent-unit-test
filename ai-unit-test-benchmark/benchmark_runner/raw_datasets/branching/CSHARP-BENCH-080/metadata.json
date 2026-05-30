@@ -1,0 +1,15 @@
+{
+  "id": "CSHARP-BENCH-080",
+  "category": "branching",
+  "difficulty": "medium",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 4,
+  "expected_assertion_count": 3,
+  "source": "custom",
+  "tags": [
+    "switch",
+    "payment",
+    "decision"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "id": "CSHARP-BENCH-211",
+  "category": "validation",
+  "difficulty": "easy",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 2,
+  "expected_assertion_count": 2,
+  "source": "custom",
+  "tags": [
+    "password-validation",
+    "length",
+    "security"
+  ],
+  "repository": "",
+  "is_executable_reference": true
+}

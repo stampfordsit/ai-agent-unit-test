@@ -1,0 +1,6 @@
+{
+  "benchmark_id": "CSHARP-BENCH-005",
+  "category": "branching",
+  "difficulty": "medium",
+  "method_name": "CalculateDiscount"
+}

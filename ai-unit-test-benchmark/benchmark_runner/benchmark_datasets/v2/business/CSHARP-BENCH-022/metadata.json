@@ -1,0 +1,17 @@
+{
+  "id": "CSHARP-BENCH-022",
+  "category": "business",
+  "difficulty": "medium",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 4,
+  "expected_assertion_count": 4,
+  "source": "custom",
+  "tags": [
+    "promotion",
+    "business-logic",
+    "branching"
+  ],
+  "repository": "",
+  "is_executable_reference": true
+}

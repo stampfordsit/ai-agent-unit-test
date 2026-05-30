@@ -1,0 +1,15 @@
+{
+  "id": "CSHARP-BENCH-079",
+  "category": "branching",
+  "difficulty": "easy",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 3,
+  "expected_assertion_count": 3,
+  "source": "custom",
+  "tags": [
+    "nested-if",
+    "shipping",
+    "branching"
+  ]
+}

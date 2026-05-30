@@ -1,0 +1,15 @@
+{
+  "id": "CSHARP-BENCH-084",
+  "category": "collection",
+  "difficulty": "easy",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 1,
+  "expected_assertion_count": 5,
+  "source": "custom",
+  "tags": [
+    "distinct",
+    "duplicate-removal",
+    "collection"
+  ]
+}

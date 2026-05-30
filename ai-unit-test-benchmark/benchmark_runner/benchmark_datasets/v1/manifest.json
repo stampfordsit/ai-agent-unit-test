@@ -1,0 +1,32 @@
+{
+  "dataset_name": "CSharpUnitTestBench",
+  "total_samples": 89,
+  "categories": [
+    "async",
+    "branching",
+    "business",
+    "collection",
+    "complex_branching",
+    "dependency",
+    "edge_case",
+    "exception",
+    "linq_heavy",
+    "simple",
+    "string",
+    "validation"
+  ],
+  "statistics": {
+    "async": 5,
+    "branching": 5,
+    "business": 16,
+    "collection": 5,
+    "complex_branching": 15,
+    "dependency": 8,
+    "edge_case": 10,
+    "exception": 5,
+    "linq_heavy": 5,
+    "simple": 5,
+    "string": 5,
+    "validation": 5
+  }
+}

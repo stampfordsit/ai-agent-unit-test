@@ -1,0 +1,6 @@
+{
+  "benchmark_id": "CSHARP-BENCH-011",
+  "category": "collection",
+  "difficulty": "medium",
+  "method_name": "GetEvenNumbers"
+}

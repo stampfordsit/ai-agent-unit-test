@@ -1,0 +1,17 @@
+{
+  "id": "CSHARP-BENCH-053",
+  "category": "dependency",
+  "difficulty": "medium",
+  "requires_mock": true,
+  "requires_async": true,
+  "branch_count": 1,
+  "expected_assertion_count": 1,
+  "source": "custom",
+  "tags": [
+    "cancellation-token",
+    "async",
+    "parameter-forwarding"
+  ],
+  "repository": "",
+  "is_executable_reference": true
+}

@@ -1,0 +1,499 @@
+[
+  {
+    "sample": "CSHARP-BENCH-039",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-040",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-041",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-042",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-043",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-005",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-006",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-079",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-080",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-081",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-016",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-017",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-018",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-044",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-045",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-046",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-047",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-048",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-049",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-050",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-051",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-052",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-053",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-082",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-083",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-084",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-064",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-065",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-066",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-067",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-068",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-069",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-070",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-071",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-072",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-073",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-074",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-075",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-076",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-077",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-078",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-031",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-033",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-034",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-035",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-036",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-037",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-038",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-054",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-055",
+    "warnings": [
+      "requires_mock mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-056",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-057",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-058",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-059",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-060",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-061",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-062",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-063",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-007",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-008",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-085",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-086",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-087",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-097",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-098",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-099",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-100",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-101",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-088",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-089",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-090",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-091",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-092",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-093",
+    "warnings": [
+      "requires_mock mismatch",
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-004",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-094",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-095",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  },
+  {
+    "sample": "CSHARP-BENCH-096",
+    "warnings": [
+      "branch_count mismatch"
+    ]
+  }
+]

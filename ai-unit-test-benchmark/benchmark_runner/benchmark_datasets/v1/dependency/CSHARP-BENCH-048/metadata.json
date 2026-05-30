@@ -1,0 +1,17 @@
+{
+  "id": "CSHARP-BENCH-048",
+  "category": "dependency",
+  "difficulty": "medium",
+  "requires_mock": true,
+  "requires_async": true,
+  "branch_count": 2,
+  "expected_assertion_count": 2,
+  "source": "custom",
+  "tags": [
+    "repository",
+    "null-check",
+    "mock-verification"
+  ],
+  "repository": "",
+  "is_executable_reference": true
+}

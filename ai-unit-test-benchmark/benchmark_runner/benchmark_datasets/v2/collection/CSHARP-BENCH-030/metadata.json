@@ -1,0 +1,17 @@
+{
+  "id": "CSHARP-BENCH-030",
+  "category": "collection",
+  "difficulty": "medium",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 1,
+  "expected_assertion_count": 3,
+  "source": "custom",
+  "tags": [
+    "sort",
+    "product-price",
+    "order-by"
+  ],
+  "repository": "",
+  "is_executable_reference": true
+}

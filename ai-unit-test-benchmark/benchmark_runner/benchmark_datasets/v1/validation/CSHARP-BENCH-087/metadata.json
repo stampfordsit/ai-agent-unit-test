@@ -1,0 +1,17 @@
+{
+  "id": "CSHARP-BENCH-087",
+  "category": "validation",
+  "difficulty": "easy",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 2,
+  "expected_assertion_count": 3,
+  "source": "custom",
+  "tags": [
+    "age-validation",
+    "range",
+    "boolean"
+  ],
+  "repository": "",
+  "is_executable_reference": true
+}

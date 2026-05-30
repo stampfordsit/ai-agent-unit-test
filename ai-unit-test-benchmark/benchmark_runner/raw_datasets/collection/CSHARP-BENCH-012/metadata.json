@@ -1,0 +1,6 @@
+{
+  "benchmark_id": "CSHARP-BENCH-012",
+  "category": "collection",
+  "difficulty": "medium",
+  "method_name": "FindMax"
+}

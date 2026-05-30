@@ -1,0 +1,21 @@
+{
+  "benchmark_id": "CSHARP-BENCH-018",
+  "category": "business",
+  "difficulty": "expert",
+  "method_name": "ValidateStock",
+  "expected_edge_cases": [
+    "zero_stock",
+    "negative_stock",
+    "discontinued_product"
+  ],
+  "complexity": {
+    "branch_count": 4,
+    "cyclomatic_complexity": 5
+  },
+  "mutation_targets": [
+    {
+      "original": "< 5",
+      "mutated": "<= 5"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "id": "CSHARP-BENCH-069",
+  "category": "exception",
+  "difficulty": "medium",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 2,
+  "expected_assertion_count": 2,
+  "source": "custom",
+  "tags": [
+    "TimeoutException",
+    "timeout-logic",
+    "api"
+  ],
+  "repository": "",
+  "is_executable_reference": true
+}

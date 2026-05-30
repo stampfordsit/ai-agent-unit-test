@@ -1,0 +1,15 @@
+{
+  "id": "CSHARP-BENCH-057",
+  "category": "edge_case",
+  "difficulty": "medium",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 2,
+  "expected_assertion_count": 1,
+  "source": "custom",
+  "tags": [
+    "negative-value",
+    "edge-case",
+    "validation"
+  ]
+}

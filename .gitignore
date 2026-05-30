@@ -1,0 +1,41 @@
+# 1. Already separated projects
+demo-project/
+
+# 2. Documents & Research Data
+DPU Conference/
+Dataset/
+MA Thematic/
+Paper/
+Summary IS.docx
+
+# 3. Temp files
+temp.zip
+temp_docx/
+
+# 4. Runtime & Dependencies
+# Web App
+node_modules/
+
+# Python (Benchmark)
+.venv/
+__pycache__/
+*.pyc
+.env
+results/
+repositories/
+ai-unit-test-benchmark/benchmark_runner/results/
+ai-unit-test-benchmark/benchmark_runner/repositories/
+
+# C#
+[Bb]in/
+[Oo]bj/
+TestResults/
+
+# OS & Editors
+.vscode/
+.vs/
+.idea/
+.DS_Store
+Thumbs.db
+*.user
+*.suo

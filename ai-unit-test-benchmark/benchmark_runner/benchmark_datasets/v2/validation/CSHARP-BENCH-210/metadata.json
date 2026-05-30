@@ -1,0 +1,17 @@
+{
+  "id": "CSHARP-BENCH-210",
+  "category": "validation",
+  "difficulty": "medium",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 2,
+  "expected_assertion_count": 2,
+  "source": "custom",
+  "tags": [
+    "email-validation",
+    "regex",
+    "format"
+  ],
+  "repository": "",
+  "is_executable_reference": true
+}

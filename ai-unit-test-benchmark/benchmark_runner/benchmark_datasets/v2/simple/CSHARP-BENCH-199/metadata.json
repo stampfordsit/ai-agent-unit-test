@@ -1,0 +1,17 @@
+{
+  "id": "CSHARP-BENCH-199",
+  "category": "simple",
+  "difficulty": "easy",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 1,
+  "expected_assertion_count": 1,
+  "source": "custom",
+  "tags": [
+    "add",
+    "math",
+    "baseline"
+  ],
+  "repository": "",
+  "is_executable_reference": true
+}

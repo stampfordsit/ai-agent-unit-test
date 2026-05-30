@@ -1,0 +1,13 @@
+{
+  "id": "CSHARP-BENCH-192",
+  "category": "real_world",
+  "difficulty": "easy",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 0,
+  "expected_assertion_count": 0,
+  "source": "github",
+  "tags": [],
+  "repository": "",
+  "is_executable_reference": true
+}

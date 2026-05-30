@@ -1,0 +1,16 @@
+{
+  "id": "CSHARP-BENCH-064",
+  "category": "complex_branching",
+  "difficulty": "hard",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 6,
+  "expected_assertion_count": 5,
+  "source": "custom",
+  "tags": [
+    "grading",
+    "nested-condition",
+    "branching",
+    "decision-tree"
+  ]
+}

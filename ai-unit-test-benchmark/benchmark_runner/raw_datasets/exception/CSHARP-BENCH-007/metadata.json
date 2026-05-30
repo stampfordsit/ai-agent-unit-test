@@ -1,0 +1,6 @@
+{
+  "benchmark_id": "CSHARP-BENCH-007",
+  "category": "exception",
+  "difficulty": "medium",
+  "method_name": "Divide"
+}

@@ -1,0 +1,21 @@
+{
+  "benchmark_id": "CSHARP-BENCH-016",
+  "category": "business",
+  "difficulty": "hard",
+  "method_name": "ValidateOrder",
+  "expected_edge_cases": [
+    "zero_total",
+    "inactive_user",
+    "empty_order"
+  ],
+  "complexity": {
+    "branch_count": 3,
+    "cyclomatic_complexity": 4
+  },
+  "mutation_targets": [
+    {
+      "original": "> 0",
+      "mutated": ">= 0"
+    }
+  ]
+}

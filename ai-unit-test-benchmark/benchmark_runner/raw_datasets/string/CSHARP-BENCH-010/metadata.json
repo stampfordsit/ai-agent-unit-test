@@ -1,0 +1,6 @@
+{
+  "benchmark_id": "CSHARP-BENCH-010",
+  "category": "string",
+  "difficulty": "medium",
+  "method_name": "Reverse"
+}

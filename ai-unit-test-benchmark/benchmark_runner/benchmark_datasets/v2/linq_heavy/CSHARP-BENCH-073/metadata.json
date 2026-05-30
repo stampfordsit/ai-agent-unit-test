@@ -1,0 +1,17 @@
+{
+  "id": "CSHARP-BENCH-073",
+  "category": "linq_heavy",
+  "difficulty": "hard",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 3,
+  "expected_assertion_count": 4,
+  "source": "custom",
+  "tags": [
+    "selectmany",
+    "distinct",
+    "flatten"
+  ],
+  "repository": "",
+  "is_executable_reference": true
+}

@@ -1,0 +1,6 @@
+{
+  "benchmark_id": "CSHARP-BENCH-006",
+  "category": "branching",
+  "difficulty": "medium",
+  "method_name": "CalculateShipping"
+}

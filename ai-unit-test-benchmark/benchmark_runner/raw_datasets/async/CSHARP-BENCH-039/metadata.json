@@ -1,0 +1,14 @@
+{
+  "id": "CSHARP-BENCH-039",
+  "category": "async",
+  "difficulty": "easy",
+  "requires_mock": false,
+  "requires_async": true,
+  "branch_count": 1,
+  "expected_assertion_count": 1,
+  "source": "custom",
+  "tags": [
+    "async",
+    "task-delay"
+  ]
+}

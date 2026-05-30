@@ -1,0 +1,6 @@
+{
+  "benchmark_id": "CSHARP-BENCH-014",
+  "category": "business",
+  "difficulty": "medium",
+  "method_name": "CalculatePoints"
+}

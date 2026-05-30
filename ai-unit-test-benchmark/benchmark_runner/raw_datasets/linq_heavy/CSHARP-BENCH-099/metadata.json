@@ -1,0 +1,15 @@
+{
+  "id": "CSHARP-BENCH-099",
+  "category": "linq_heavy",
+  "difficulty": "hard",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 3,
+  "expected_assertion_count": 2,
+  "source": "custom",
+  "tags": [
+    "join",
+    "projection",
+    "linq"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "CSHARP-BENCH-049",
+  "category": "dependency",
+  "difficulty": "hard",
+  "requires_mock": true,
+  "requires_async": true,
+  "branch_count": 3,
+  "expected_assertion_count": 3,
+  "source": "custom",
+  "tags": [
+    "inventory",
+    "payment",
+    "business-logic",
+    "async"
+  ],
+  "repository": "",
+  "is_executable_reference": true
+}

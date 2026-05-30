@@ -1,0 +1,6 @@
+{
+  "benchmark_id": "CSHARP-BENCH-015",
+  "category": "business",
+  "difficulty": "medium",
+  "method_name": "IsPremium"
+}

@@ -1,0 +1,6 @@
+{
+  "benchmark_id": "CSHARP-BENCH-004",
+  "category": "validation",
+  "difficulty": "medium",
+  "method_name": "IsValidEmail"
+}

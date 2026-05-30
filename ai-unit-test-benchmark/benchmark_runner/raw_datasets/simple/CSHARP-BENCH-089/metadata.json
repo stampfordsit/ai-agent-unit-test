@@ -1,0 +1,15 @@
+{
+  "id": "CSHARP-BENCH-089",
+  "category": "simple",
+  "difficulty": "easy",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 2,
+  "expected_assertion_count": 2,
+  "source": "custom",
+  "tags": [
+    "even-odd",
+    "boolean",
+    "math"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "CSHARP-BENCH-098",
+  "category": "linq_heavy",
+  "difficulty": "medium",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 1,
+  "expected_assertion_count": 1,
+  "source": "custom",
+  "tags": [
+    "aggregate",
+    "sum",
+    "linq"
+  ]
+}

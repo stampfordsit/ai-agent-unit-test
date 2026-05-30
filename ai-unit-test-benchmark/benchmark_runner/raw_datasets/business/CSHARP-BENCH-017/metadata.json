@@ -1,0 +1,21 @@
+{
+  "benchmark_id": "CSHARP-BENCH-017",
+  "category": "business",
+  "difficulty": "hard",
+  "method_name": "ProcessInvoice",
+  "expected_edge_cases": [
+    "zero_subtotal",
+    "member_discount",
+    "tax_calculation"
+  ],
+  "complexity": {
+    "branch_count": 3,
+    "cyclomatic_complexity": 5
+  },
+  "mutation_targets": [
+    {
+      "original": "0.07m",
+      "mutated": "0.00m"
+    }
+  ]
+}

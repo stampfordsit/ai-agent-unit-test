@@ -1,0 +1,17 @@
+{
+  "id": "CSHARP-BENCH-010",
+  "category": "branching",
+  "difficulty": "easy",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 2,
+  "expected_assertion_count": 2,
+  "source": "custom",
+  "tags": [
+    "ternary",
+    "user-role",
+    "boolean"
+  ],
+  "repository": "",
+  "is_executable_reference": true
+}

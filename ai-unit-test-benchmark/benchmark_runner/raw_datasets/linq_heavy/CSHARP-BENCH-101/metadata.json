@@ -1,0 +1,16 @@
+{
+  "id": "CSHARP-BENCH-101",
+  "category": "linq_heavy",
+  "difficulty": "expert",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 5,
+  "expected_assertion_count": 3,
+  "source": "custom",
+  "tags": [
+    "complex-chain",
+    "orderby",
+    "where",
+    "select"
+  ]
+}

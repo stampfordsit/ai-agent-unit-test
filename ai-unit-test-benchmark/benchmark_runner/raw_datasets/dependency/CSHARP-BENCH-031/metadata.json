@@ -1,0 +1,15 @@
+{
+  "id": "CSHARP-BENCH-031",
+  "category": "dependency",
+  "difficulty": "easy",
+  "requires_mock": true,
+  "requires_async": true,
+  "branch_count": 1,
+  "expected_assertion_count": 3,
+  "source": "custom",
+  "tags": [
+    "repository",
+    "async",
+    "mock"
+  ]
+}

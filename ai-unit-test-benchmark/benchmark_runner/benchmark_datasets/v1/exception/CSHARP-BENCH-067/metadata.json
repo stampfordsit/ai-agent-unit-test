@@ -1,0 +1,17 @@
+{
+  "id": "CSHARP-BENCH-067",
+  "category": "exception",
+  "difficulty": "easy",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 1,
+  "expected_assertion_count": 1,
+  "source": "custom",
+  "tags": [
+    "ArgumentNullException",
+    "null-input",
+    "validation"
+  ],
+  "repository": "",
+  "is_executable_reference": true
+}
