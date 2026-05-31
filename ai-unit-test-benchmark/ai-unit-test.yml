@@ -1,0 +1,21 @@
+name: AI Unit Test Generator
+
+on:
+  pull_request:
+    paths:
+      - '**.cs'
+
+jobs:
+  generate-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger AI Test Generation Webhook
+        run: |
+          curl -X POST https://your-deployed-app.com/api/cicd/webhook \
+            -H "Content-Type: application/json" \
+            -d '{
+              "repoUrl": "${{ github.server_url }}/${{ github.repository }}",
+              "prNumber": "${{ github.event.pull_request.number }}",
+              "branch": "${{ github.head_ref }}",
+              "workflow": "ultimate_hybrid"
+            }'
