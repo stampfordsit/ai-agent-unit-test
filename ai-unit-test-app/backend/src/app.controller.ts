@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, HttpException, HttpStatus, Query } from '@
 import { ApiTags, ApiOperation, ApiResponse, ApiProperty } from '@nestjs/swagger';
 import * as path from 'path';
 import * as fs from 'fs';
-import { exec } from 'child_process';
+import { exec, execSync } from 'child_process';
 
 const workspaceRoot = path.resolve(process.cwd(), '..', '..');
 
@@ -33,6 +33,12 @@ class GenerateDto {
 
   @ApiProperty({ required: false, description: 'Whether to run Mutation Testing or not' })
   runMutation?: boolean;
+
+  @ApiProperty({ required: false, description: 'The directory name of the cloned repo in github_repos' })
+  repoDir?: string;
+
+  @ApiProperty({ required: false })
+  methodName?: string;
 }
 
 @ApiTags('AI Unit Test Generation')
@@ -59,7 +65,6 @@ export class AppController {
     return [
       { id: 'gptmini', name: 'GPT-4o Mini (Azure)' },
       { id: 'llama', name: 'Llama 3.3 70B (Azure)' },
-      { id: 'deepseek', name: 'DeepSeek-R1 (Azure)' },
       { id: 'deepseekv3', name: 'DeepSeek-V3 (Azure)' }
     ];
   }
@@ -100,6 +105,16 @@ export class AppController {
       if (runMutation === false || (runMutation as any) === 'false' || String(runMutation) === 'false') {
         command += ' --no-mutation';
       }
+      
+      if (body.source === 'github' && body.repoDir && body.filePath) {
+        const repoAbsPath = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'csharp_projects', 'github_repos', body.repoDir);
+        command += ` --github-repo-path "${repoAbsPath}" --github-file-path "${body.filePath}"`;
+      }
+      
+      if (body.methodName) {
+        command += ` --method-name "${body.methodName}"`;
+      }
+      
       console.log(`[Backend] Executing AI sandbox runner: ${command}`);
       
       exec(command, { cwd: benchmarkRunnerDir }, (error, stdout, stderr) => {
@@ -388,19 +403,33 @@ export class AppController {
       throw new HttpException('Missing repoUrl parameter', HttpStatus.BAD_REQUEST);
     }
 
-    const tempRoot = path.join(workspaceRoot, 'ai-unit-test-app', 'backend', 'temp');
+    const tempRoot = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'csharp_projects', 'github_repos');
     const tempDirName = `temp_repo_${Date.now()}`;
     const tempDirPath = path.join(tempRoot, tempDirName);
     
     try {
       fs.mkdirSync(tempRoot, { recursive: true });
+      
+      // Cleanup old temp_repo_ folders to save disk space
+      const existingDirs = fs.readdirSync(tempRoot);
+      for (const dir of existingDirs) {
+        if (dir.startsWith('temp_repo_')) {
+          const dirPath = path.join(tempRoot, dir);
+          try {
+            fs.rmSync(dirPath, { recursive: true, force: true });
+            console.log(`[GitHub Ingest] Cleaned up old repo folder: ${dir}`);
+          } catch (e) {
+            console.error(`[GitHub Ingest] Failed to clean up ${dirPath}`, e);
+          }
+        }
+      }
     } catch (err) {
       throw new HttpException(`Failed to create temp root: ${err.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     return new Promise((resolve, reject) => {
-      // Use blobless + no-checkout clone to avoid Windows MAX_PATH issues (e.g. committed node_modules)
-      const cloneCommand = `git clone --depth 1 --quiet --filter=blob:none --no-checkout "${repoUrl}" "${tempDirPath}"`;
+      // Perform a standard full clone so we get .sln, .csproj, and test projects for native Coverlet execution
+      const cloneCommand = `git clone --depth 1 --quiet "${repoUrl}" "${tempDirPath}"`;
       exec(cloneCommand, (cloneError, _, cloneStderr) => {
         if (cloneError) {
           console.error('Clone error:', cloneError);
@@ -409,41 +438,35 @@ export class AppController {
           return;
         }
 
-        // Configure sparse-checkout: only pull .cs source files — skips node_modules, dist, etc.
-        exec(`git sparse-checkout set --no-cone "*.cs"`, { cwd: tempDirPath }, (sparseError) => {
-          if (sparseError) {
-            console.warn('Sparse-checkout config warning:', sparseError.message);
-          }
+        const parserDll = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'csharp_projects', 'RoslynParserCli', 'bin', 'Debug', 'net8.0', 'RoslynParserCli.dll');
+        const csFiles = scanCsFiles(tempDirPath).filter(f => !path.relative(tempDirPath, f).toLowerCase().includes('test'));
+        const parsedFiles: any[] = [];
 
-          exec(`git checkout`, { cwd: tempDirPath }, async (checkoutError, __, checkoutStderr) => {
-            if (checkoutError) {
-              console.warn('Checkout warning (non-fatal):', cleanGitError(checkoutStderr || checkoutError.message));
-            }
-
-            const parserDll = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'csharp_projects', 'RoslynParserCli', 'bin', 'Debug', 'net8.0', 'RoslynParserCli.dll');
-            const csFiles = scanCsFiles(tempDirPath);
-            const parsedFiles: any[] = [];
-
-            for (const file of csFiles) {
-              const methods = await parseCsFile(parserDll, file);
-              if (methods && methods.length > 0) {
-                const relativePath = path.relative(tempDirPath, file);
-                parsedFiles.push({
-                  filePath: relativePath,
-                  className: methods[0].ClassName,
-                  methods: methods.map(m => ({
-                    methodName: m.MethodName,
-                    signature: `${m.Modifiers.join(' ')} ${m.ReturnType} ${m.MethodName}(${m.Parameters.map((p: any) => `${p.Type} ${p.Name}`).join(', ')})`,
-                    body: m.Body
-                  }))
-                });
-              }
-            }
-
-            resolve({
-              tempDir: tempDirName,
-              files: parsedFiles
+        const parsePromises = csFiles.map(async (file) => {
+          const content = fs.readFileSync(file, 'utf8');
+          const nsMatch = content.match(/namespace\s+([\w\.]+)/);
+          const namespaceName = nsMatch ? nsMatch[1] : 'BenchmarkSourceProject';
+          
+          const methods = await parseCsFile(parserDll, file);
+          if (methods && methods.length > 0) {
+            const relativePath = path.relative(tempDirPath, file);
+            parsedFiles.push({
+              filePath: relativePath,
+              className: methods[0].ClassName,
+              namespaceName: namespaceName,
+              methods: methods.map(m => ({
+                methodName: m.MethodName,
+                signature: `${m.Modifiers.join(' ')} ${m.ReturnType} ${m.MethodName}(${m.Parameters.map((p: any) => `${p.Type} ${p.Name}`).join(', ')})`,
+                body: m.Body
+              }))
             });
+          }
+        });
+
+        Promise.all(parsePromises).then(() => {
+          resolve({
+            tempDir: tempDirName,
+            files: parsedFiles
           });
         });
       });
@@ -452,8 +475,8 @@ export class AppController {
 
   @Post('github/create-pr')
   @ApiOperation({ summary: 'Create Pull Request with generated test code' })
-  async createGithubPr(@Body() body: { repoUrl: string, tempDir: string, filePath: string, testCode: string, githubPat?: string }) {
-    const { repoUrl, tempDir, filePath, testCode } = body;
+  async createGithubPr(@Body() body: { repoUrl: string, tempDir: string, filePath: string, testCode: string, githubPat?: string, metrics?: any, methodName?: string }) {
+    const { repoUrl, tempDir, filePath, testCode, metrics, methodName } = body;
     if (!repoUrl || !tempDir || !filePath || !testCode) {
       throw new HttpException('Missing required parameters', HttpStatus.BAD_REQUEST);
     }
@@ -464,8 +487,8 @@ export class AppController {
       throw new HttpException('GitHub Personal Access Token not provided. Enter it in the GitHub Ingestion UI or add GITHUB_PAT to benchmark_runner/.env', HttpStatus.BAD_REQUEST);
     }
 
-    // Using global workspaceRoot
-    const tempDirPath = path.join(workspaceRoot, 'ai-unit-test-app', 'backend', 'temp', tempDir);
+    // Update workspaceRoot targeting csharp_projects/github_repos
+    const tempDirPath = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'csharp_projects', 'github_repos', tempDir);
 
     if (!fs.existsSync(tempDirPath)) {
       throw new HttpException('Ingested repository session expired or directory not found', HttpStatus.NOT_FOUND);
@@ -473,9 +496,30 @@ export class AppController {
 
     const sourceDir = path.dirname(filePath);
     const sourceBase = path.basename(filePath, '.cs');
-    const testFileName = `${sourceBase}Tests.cs`;
-    const testFileRelativePath = path.join(sourceDir, testFileName);
-    const testFileAbsolutePath = path.join(tempDirPath, testFileRelativePath);
+    const testFileName = methodName ? `${sourceBase}_${methodName}Tests.cs` : `${sourceBase}Tests.cs`;
+    
+    // Find the actual generated test file path in the tempDirPath
+    const findTestFile = (dir: string, filename: string): string | null => {
+      const files = fs.readdirSync(dir);
+      for (const file of files) {
+        const fullPath = path.join(dir, file);
+        if (file === 'bin' || file === 'obj' || file === 'StrykerOutput') continue;
+        if (fs.statSync(fullPath).isDirectory()) {
+          const res = findTestFile(fullPath, filename);
+          if (res) return res;
+        } else if (file === filename) {
+          return fullPath;
+        }
+      }
+      return null;
+    };
+    
+    let testFileAbsolutePath = findTestFile(tempDirPath, testFileName);
+    if (!testFileAbsolutePath) {
+      // Fallback: place it next to the source file if not found
+      const testFileRelativePath = path.join(sourceDir, testFileName);
+      testFileAbsolutePath = path.join(tempDirPath, testFileRelativePath);
+    }
 
     try {
       fs.mkdirSync(path.dirname(testFileAbsolutePath), { recursive: true });
@@ -496,41 +540,141 @@ export class AppController {
     return new Promise((resolve, reject) => {
       const authUrl = `https://${githubToken}@github.com/${owner}/${repo}.git`;
       
-      const gitCommands = [
-        // Disable sparse-checkout first so we can freely add new test files
-        `git sparse-checkout disable`,
-        `git remote set-url origin "${authUrl}"`,
-        `git checkout -b "${branchName}"`,
-        `git add "${testFileRelativePath}"`,
-        `git -c user.name="AI Unit Test Agent" -c user.email="agent@ai-unit-test.local" commit -m "Add AI-generated unit tests for ${sourceBase}"`,
-        `git push origin "${branchName}"`
-      ];
+      // Add a robust .gitignore to prevent committing build artifacts
+      const gitignorePath = path.join(tempDirPath, '.gitignore');
+      const gitignoreContent = "\n[Bb]in/\n[Oo]bj/\nStrykerOutput/\ncoverage.cobertura.xml\n";
+      fs.appendFileSync(gitignorePath, gitignoreContent);
 
-      const execSequence = (index: number) => {
-        if (index >= gitCommands.length) {
-          openPullRequest(githubToken, owner, repo, branchName, sourceBase)
-            .then((prData) => resolve(prData))
-            .catch((err) => reject(new HttpException(`Failed to create Pull Request: ${err.message}`, HttpStatus.INTERNAL_SERVER_ERROR)));
-          return;
+      try {
+        execSync(`git remote set-url origin "${authUrl}"`, { cwd: tempDirPath, stdio: 'pipe' });
+        execSync(`git checkout -b "${branchName}"`, { cwd: tempDirPath, stdio: 'pipe' });
+        execSync(`git add .`, { cwd: tempDirPath, stdio: 'pipe' });
+        
+        // Check if there are actual changes
+        const status = execSync(`git status --porcelain`, { cwd: tempDirPath }).toString().trim();
+        if (!status) {
+          return reject(new HttpException('No new changes to commit. The generated tests are identical to the repository.', HttpStatus.BAD_REQUEST));
         }
 
-        exec(gitCommands[index], { cwd: tempDirPath }, (error, stdout, stderr) => {
-          if (error) {
-            // sparse-checkout disable failing is non-fatal (repo might not have sparse enabled)
-            if (gitCommands[index].includes('sparse-checkout disable')) {
-              console.warn('sparse-checkout disable warning (non-fatal):', stderr);
-              execSequence(index + 1);
-              return;
-            }
-            console.error(`Git command failed: ${gitCommands[index]}`, stderr || error.message);
-            reject(new HttpException(`Git operation failed: ${cleanGitError(stderr || error.message)}`, HttpStatus.INTERNAL_SERVER_ERROR));
-            return;
-          }
-          execSequence(index + 1);
-        });
-      };
+        execSync(`git -c user.name="AI Unit Test Agent" -c user.email="agent@ai-unit-test.local" commit -m "Add AI-generated unit tests for ${sourceBase}"`, { cwd: tempDirPath, stdio: 'pipe' });
+        execSync(`git push origin "${branchName}"`, { cwd: tempDirPath, stdio: 'pipe' });
 
-      execSequence(0);
+        openPullRequest(githubToken, owner, repo, branchName, sourceBase, metrics)
+          .then((prData) => resolve(prData))
+          .catch((err) => reject(new HttpException(`Failed to create Pull Request: ${err.message}`, HttpStatus.INTERNAL_SERVER_ERROR)));
+      } catch (err: any) {
+        console.error(`Git command failed`, err.stderr?.toString() || err.message);
+        reject(new HttpException(`Git operation failed: ${cleanGitError(err.stderr?.toString() || err.message)}`, HttpStatus.INTERNAL_SERVER_ERROR));
+      }
+    });
+  }
+
+  @Post('cicd/webhook')
+  @ApiOperation({ summary: 'Webhook for GitHub Actions CI/CD to trigger automated AI test generation' })
+  async cicdWebhook(@Body() body: { repoUrl: string, prNumber: string, branch: string, workflow?: string }) {
+    const { repoUrl, prNumber, branch, workflow = 'ultimate_hybrid' } = body;
+    
+    if (!repoUrl) {
+      throw new HttpException('Missing repoUrl', HttpStatus.BAD_REQUEST);
+    }
+    
+    // Fire and forget: We run this asynchronously so the webhook returns 200 OK immediately
+    this.runAutomatedCicdPipeline(repoUrl, prNumber, branch, workflow).catch(err => {
+      console.error('[CI/CD Pipeline Error]', err);
+    });
+    
+    return { status: 'Pipeline triggered', repoUrl, workflow };
+  }
+
+  private async runAutomatedCicdPipeline(repoUrl: string, prNumber: string, branch: string, workflow: string) {
+    console.log(`[CI/CD] Starting automated pipeline for ${repoUrl} (PR #${prNumber})`);
+    
+    // 1. Clone Repo
+    const tempRoot = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'csharp_projects', 'github_repos');
+    const tempDirName = `cicd_repo_${Date.now()}`;
+    const tempDirPath = path.join(tempRoot, tempDirName);
+    
+    fs.mkdirSync(tempRoot, { recursive: true });
+    
+    await new Promise((resolve, reject) => {
+      exec(`git clone --depth 1 --quiet -b "${branch}" "${repoUrl}" "${tempDirPath}"`, (error) => {
+        if (error) {
+          // If branch doesn't exist, try default clone
+          exec(`git clone --depth 1 --quiet "${repoUrl}" "${tempDirPath}"`, (error2) => {
+             if (error2) return reject(error2);
+             resolve(true);
+          });
+          return;
+        }
+        resolve(true);
+      });
+    });
+
+    // 2. Scan for C# files (simplified logic: pick the first one that looks like business logic)
+    const csFiles = scanCsFiles(tempDirPath).filter(f => !path.relative(tempDirPath, f).toLowerCase().includes('test'));
+    if (csFiles.length === 0) {
+      console.log(`[CI/CD] No C# files found to test in ${repoUrl}`);
+      return;
+    }
+
+    const targetFile = csFiles[0]; 
+    const relativePath = path.relative(tempDirPath, targetFile);
+    const sourceCode = fs.readFileSync(targetFile, 'utf8');
+
+    // 3. Run AI Generation natively
+    const pythonExe = path.join(workspaceRoot, 'ai-unit-test-benchmark', '.venv', 'Scripts', 'python.exe');
+    const apiRunnerScript = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'api_runner.py');
+    const model = 'llama'; 
+
+    const tempFileName = `temp_cicd_${Date.now()}.cs`;
+    const tempFilePath = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', tempFileName);
+    fs.writeFileSync(tempFilePath, sourceCode, 'utf8');
+
+    const command = `"${pythonExe}" "${apiRunnerScript}" --model ${model} --workflow ${workflow} --file "${tempFilePath}" --github-repo-path "${tempDirPath}" --github-file-path "${relativePath}"`;
+    
+    console.log(`[CI/CD] Running test generation: ${command}`);
+    
+    await new Promise((resolve, reject) => {
+      exec(command, { cwd: path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner') }, (error, stdout, stderr) => {
+        try { fs.unlinkSync(tempFilePath); } catch (e) {}
+        
+        if (error) {
+          console.error(`[CI/CD] Generation failed:`, stderr);
+          return reject(error);
+        }
+        
+        try {
+          const parsedResult = JSON.parse(extractJson(stdout));
+          
+          // Save CI/CD log
+          const cicdDir = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'results', 'ci_cd');
+          if (!fs.existsSync(cicdDir)) fs.mkdirSync(cicdDir, { recursive: true });
+          
+          const logFile = path.join(cicdDir, `cicd_run_${Date.now()}.json`);
+          fs.writeFileSync(logFile, JSON.stringify({
+            timestamp: new Date().toISOString(),
+            repoUrl,
+            prNumber,
+            branch,
+            targetFile: relativePath,
+            result: parsedResult
+          }, null, 2));
+          
+          console.log(`[CI/CD] Successfully generated tests for ${relativePath}. Result saved.`);
+          
+          // Cleanup cloned repo
+          try {
+            fs.rmSync(tempDirPath, { recursive: true, force: true });
+            console.log(`[CI/CD] Cleaned up temporary repository: ${tempDirPath}`);
+          } catch (cleanupErr) {
+            console.error(`[CI/CD] Failed to clean up repository: ${tempDirPath}`, cleanupErr);
+          }
+          
+          resolve(parsedResult);
+        } catch (e) {
+          reject(e);
+        }
+      });
     });
   }
 }
@@ -693,13 +837,29 @@ function cleanGitError(raw: string): string {
 }
 
 // Open Pull Request via GitHub REST API (fallback to master base branch if main base branch fails)
-async function openPullRequest(token: string, owner: string, repo: string, branch: string, component: string): Promise<any> {
+async function openPullRequest(token: string, owner: string, repo: string, branch: string, component: string, metrics?: any): Promise<any> {
   const url = `https://api.github.com/repos/${owner}/${repo}/pulls`;
+  
+  let bodyContent = `This Pull Request adds C# unit tests generated using the Multi-Agent C# Test Framework.\n\n### Included Components:\n- Target Class: \`${component}\`\n- Test Case Coverage: Automated assertions, mocks, and sandbox-verified compliance.\n`;
+  if (metrics) {
+    bodyContent += `\n### 📊 AI Generation Metrics:\n`;
+    bodyContent += `- **Status**: ${metrics.success ? '✅ Passed Run' : '❌ Failed Run'}\n`;
+    bodyContent += `- **Line Coverage**: ${metrics.line_coverage !== undefined ? metrics.line_coverage.toFixed(2) : 0}%\n`;
+    bodyContent += `- **Branch Coverage**: ${metrics.branch_coverage !== undefined ? metrics.branch_coverage.toFixed(2) : 0}%\n`;
+    bodyContent += `- **Latency**: ${metrics.latency || 0}s\n`;
+    bodyContent += `- **Total Cost**: $${metrics.cost ? metrics.cost.toFixed(5) : 0}\n`;
+    bodyContent += `- **Self-Healing Retries**: ${metrics.healing_attempts || 0}\n`;
+    if (metrics.evaluator_model) {
+      bodyContent += `- **Evaluator**: ${metrics.evaluator_model}\n`;
+      bodyContent += `- **Final Quality Score**: ${metrics.evaluator_score || 'N/A'}/100\n`;
+    }
+  }
+
   const body = JSON.stringify({
     title: `🤖 Add AI-generated unit tests for ${component}`,
     head: branch,
     base: 'main',
-    body: `This Pull Request adds C# unit tests generated using the Multi-Agent C# Test Framework.\n\n### Included Components:\n- Target Class: \`${component}\`\n- Test Case Coverage: Automated assertions, mocks, and sandbox-verified compliance.`
+    body: bodyContent
   });
 
   const response = await fetch(url, {

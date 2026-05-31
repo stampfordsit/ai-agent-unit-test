@@ -11,7 +11,8 @@ The system is designed as a modular workspace consisting of the following core p
 1. **Frontend Dashboard ([frontend](file:///g:/AI%20Agent%20in%20C%23/ai-unit-test-app/frontend))**:
    - Built with **Next.js** and styled with **Tailwind CSS**.
    - Contains the **Playground** workspace for manual code entry.
-   - Provides **GitHub Ingest** to clone remote repositories, parse C# classes/methods using Roslyn, select methods, and create Pull Requests.
+   - Provides **GitHub Ingest** to clone remote repositories, parse C# classes/methods using Roslyn, select methods, and create Pull Requests. Includes an **Automatic Repository Cleanup** mechanism to prevent disk space exhaustion from temporary clones.
+   - **Native Execution & CI/CD Hooks**: Supports cloning full repositories to run generated tests natively in the target environment and provides a Webhook (`POST /api/cicd/webhook`) for automated GitHub Action CI/CD pipelines.
    - Features the **Analytical Dashboard** presenting comprehensive charts, metrics (success rate, code coverage, self-healing loops), and logs.
 2. **Backend API Gateway ([backend](file:///g:/AI%20Agent%20in%20C%23/ai-unit-test-app/backend))**:
    - Built with **NestJS** (TypeScript) and documented with **Swagger/OpenAPI**.
@@ -110,6 +111,10 @@ The platform implements six main workflows to generate, evaluate, and optimize u
 5. **Evaluator-Guided (`evaluator_guided`)**: Iteratively refines the test code guided by the Evaluator Agent's structured scores and suggestions.
 6. **Ultimate Hybrid (`ultimate_hybrid`)**: The ultimate pipeline combining Best-of-N, Self-Healing, and Evaluator-Guided refinements to achieve the highest possible coverage and test quality.
 
+> **💡 Smart Prompt Engine**: The AI test generator features **Dynamic Namespace Extraction**. It automatically scans your uploaded C# source code to extract the correct `namespace`, ensuring generated tests seamlessly compile alongside your real-world GitHub projects without hardcoded project names.
+
+> **📂 Per-Method Test Isolation**: When testing methods from a GitHub repository, the system intelligently generates unique test files for each specific method (e.g., `CalculatorService_AddTests.cs`). This prevents overwriting existing test files and ensures isolated, highly focused unit testing while remaining fully compatible with xUnit runners.
+
 See the **System Workflow** page inside the dashboard (**[http://localhost:3000/?view=workflow](http://localhost:3000/?view=workflow)**) for detailed sequence diagrams of these processes.
 
 ---
@@ -124,6 +129,25 @@ The backend handles GitHub API operations and AI model requests.
   AZURE_OPENAI_API_KEY=your-api-key
   GITHUB_PAT=your-github-pat
   ```
+
+---
+
+## 🛠️ Troubleshooting
+
+### GitHub Pull Request Creation (403 Errors)
+If you encounter a `403 Resource not accessible by personal access token` error when attempting to create a Pull Request from the Dashboard, it is highly likely that your GitHub Personal Access Token (PAT) lacks the correct permissions.
+
+**If using a Fine-Grained Token (`github_pat_...`):**
+1. Go to your GitHub Developer Settings -> Personal access tokens -> Fine-grained tokens.
+2. Under **Repository access**, ensure your target repository is selected.
+3. Under **Repository permissions**, ensure both **Contents** and **Pull requests** are set to **Read and write**.
+
+**If using a Classic Token (`ghp_...`):**
+Ensure the token was generated with the `repo` scope enabled.
+
+### Test Compilation Errors (Old Generated Code)
+If you previously generated tests using older AI prompts (which hardcoded the `BenchmarkSourceProject` namespace) and pushed them to your GitHub repository, subsequent test generation runs on the same repository might fail to compile natively.
+- **Fix**: Manually delete the broken AI-generated test files (e.g., `CalculatorServiceTests.cs`) from your original repository on GitHub, then try importing the repository again. The updated AI prompt now features **Dynamic Namespace Extraction** and will compile successfully without polluting the source project namespace.
 
 ---
 

@@ -188,6 +188,16 @@ The **GitHub Ingest** panel allows developers to automatically create Pull Reque
 
 ---
 
+## 🚀 CI/CD Webhook & Native Execution
+
+The system supports automated integration directly into developer CI/CD pipelines via GitHub Actions.
+
+1. **Native Execution**: When a GitHub repository is cloned or passed to the webhook, the AI engine dynamically parses the project structure, resolves `.csproj` dependencies, and scaffolds an `xUnit` test project if one doesn't exist. Tests are executed natively against the actual project source instead of a generic sandbox.
+2. **Automated Webhooks**: A dedicated `POST /api/cicd/webhook` endpoint on the backend listens for CI/CD payloads (repository URL, PR number, branch) and automatically runs the unit test generation workflow (default: `ultimate_hybrid`).
+3. **GitHub Action Template**: You can easily embed the AI Unit Test generator into your own repositories using the provided `ai-unit-test.yml` template located in the benchmark directory.
+
+---
+
 ## 🏃 Running the Benchmark Suites (CLI)
 
 Run the benchmark runner from the `ai-unit-test-benchmark/benchmark_runner/` directory using your Python virtual environment.
@@ -242,6 +252,8 @@ Integrates Best-of-N Candidate Generation ($N=3$, temperature = 0.5), compiler-f
 - **Compiler-Feedback Self-Healing**: Checks all $N$ candidates in the .NET test sandbox. Any candidate that fails to compile or run undergoes up to 3 rounds of automated healing, using Roslyn and .NET compiler errors to resolve issues.
 - **Best Candidate Selection**: Evaluates all successful or partially-healed candidates against coverage metrics (Line/Branch) and semantic grading. The candidate with the highest overall score is selected.
 - **Evaluator-Guided Iterative Refinement**: Takes the selected best candidate, reads specific feedback/critiques from the Evaluator Agent, and performs up to 3 rounds of refinement to maximize coverage and cover complex edge cases.
+- **Dynamic Namespace Extraction**: Automatically extracts the namespace from the C# source file and injects it into the AI test generation prompt. If the namespace is `BenchmarkSourceProject`, it strictly retains the `BenchmarkTestProject.Tests` fallback to ensure backward compatibility for research data runs.
+- **Per-Method Test Isolation**: The `api_runner.py` accepts an optional `--method-name` argument to natively isolate test generation. It enforces strict test class naming rules (e.g. `CalculatorService_AddTests`) in the AI Prompt and prevents file collision (overwriting) when generating tests for multiple methods in the same source class.
 
 ```bash
 py main.py --version v2 --model gptmini --workflow ultimate_hybrid

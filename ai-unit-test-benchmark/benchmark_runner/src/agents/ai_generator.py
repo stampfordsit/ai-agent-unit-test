@@ -93,10 +93,11 @@ class AIGenerator:
         source_code: str,
         model_name: str,
         temperature: float = 0.2,
-        timeout: int = 120
+        timeout: int = 120,
+        method_name: str = None
     ):
         from src.agents.prompts.test_generation_prompt import build_test_generation_prompt
-        prompt = build_test_generation_prompt(source_code)
+        prompt = build_test_generation_prompt(source_code, method_name)
         result = self.generate(prompt, model_name, temperature=temperature, timeout=timeout)
         return {
             "generated_test": result["content"],

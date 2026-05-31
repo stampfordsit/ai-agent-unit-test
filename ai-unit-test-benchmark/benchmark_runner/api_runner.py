@@ -16,15 +16,19 @@ from src.execution.coverage_reader import CoverageReader
 from src.config.models import get_models
 from src.config.pricing import MODEL_PRICING
 from src.agents.prompts.reviewer_agent import (build_review_prompt, build_refine_prompt)
+from src.execution.project_generator import ProjectGenerator
 from src.agents.prompts.self_healing_prompt import build_self_healing_prompt
 from src.agents.prompts.evaluator_guided_prompt import build_evaluator_guided_prompt
 
 def run_api():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True, help="AI Model to use (e.g. gptmini, llama, deepseekv3)")
-    parser.add_argument("--workflow", default="single", help="Workflow to use: single, agent, self_healing, best_of_n, evaluator_guided")
-    parser.add_argument("--file", required=True, help="Path to C# source code file to test")
+    parser.add_argument("--workflow", default="ultimate_hybrid", help="Workflow to use: single, agent, self_healing, best_of_n, evaluator_guided, ultimate_hybrid")
+    parser.add_argument("--file", required=True, help="Path to C# source code file to test (could be temp snippet or actual file)")
     parser.add_argument("--no-mutation", action="store_true", help="Skip Stryker mutation testing")
+    parser.add_argument("--github-repo-path", help="Path to the cloned GitHub repository (triggers native execution)")
+    parser.add_argument("--github-file-path", help="Relative path of the C# file within the GitHub repository")
+    parser.add_argument("--method-name", help="Name of the method being tested (optional)")
     args = parser.parse_args()
 
     # Load source code
@@ -38,8 +42,15 @@ def run_api():
     # Load configurations
     generator = AIGenerator()
     evaluator = EvaluatorAgent()
-    executor = TestExecutor(mode="demo")
     coverage_reader = CoverageReader()
+    
+    # Check execution mode
+    if args.github_repo_path and args.github_file_path:
+        # Native GitHub execution
+        executor = TestExecutor(mode="github_native", repo_path=args.github_repo_path, file_path=args.github_file_path, method_name=args.method_name)
+    else:
+        # Fallback to Sandbox
+        executor = TestExecutor(mode="demo")
 
     # Get model name mapping
     models = get_models(args.model)
@@ -112,7 +123,7 @@ def run_api():
         return round(cost_in + cost_out, 6)
 
     def run_worker_test(src_code, m_name, temp=0.2):
-        res = generator.generate_test(src_code, m_name, temperature=temp)
+        res = generator.generate_test(src_code, m_name, temperature=temp, method_name=args.method_name)
         cost = calculate_worker_cost(res["prompt_tokens"], res["completion_tokens"])
         return res, cost
 

@@ -333,7 +333,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenerateResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showTelemetry, setShowTelemetry] = useState(false);
+  const [showTelemetry, setShowTelemetry] = useState(true);
 
   const [workspaceMode, setWorkspaceMode] = useState<'manual' | 'github' | 'workflow' | 'params'>('manual');
   const [workflowSubTab, setWorkflowSubTab] = useState<'orchestration' | 'pipelines'>('orchestration');
@@ -345,7 +345,7 @@ export default function Home() {
   const [ultimateSubTab, setUltimateSubTab] = useState<'flow' | 'details'>('flow');
   const [githubRepoUrl, setGithubRepoUrl] = useState('');
   const [githubLoading, setGithubLoading] = useState(false);
-  const [githubRepoData, setGithubRepoData] = useState<{ tempDir: string; files: { filePath: string; className: string; methods: { methodName: string; signature: string; body: string }[] }[] } | null>(null);
+  const [githubRepoData, setGithubRepoData] = useState<{ tempDir: string; files: { filePath: string; className: string; namespaceName?: string; methods: { methodName: string; signature: string; body: string }[] }[] } | null>(null);
   const [selectedFilePath, setSelectedFilePath] = useState('');
   const [githubTempDir, setGithubTempDir] = useState('');
   const [prLoading, setPrLoading] = useState(false);
@@ -380,8 +380,8 @@ export default function Home() {
       const data = await response.json();
       setGithubRepoData(data);
       setGithubTempDir(data.tempDir);
-    } catch (err: any) {
-      setError(err.message || 'An error occurred during GitHub repository clone.');
+    } catch (err: unknown) {
+      setError((err as Error).message || 'An error occurred during GitHub repository clone.');
     } finally {
       setGithubLoading(false);
     }
@@ -404,7 +404,18 @@ export default function Home() {
           tempDir: githubTempDir,
           filePath: selectedFilePath,
           testCode: result.generated_test,
-          githubPat: githubPat || undefined
+          methodName: selectedMethodName,
+          githubPat: githubPat || undefined,
+          metrics: {
+            latency: result.latency,
+            cost: result.cost,
+            healing_attempts: result.healing_attempts,
+            evaluator_model: result.evaluator_model,
+            evaluator_score: result.evaluator_feedback?.score || 100,
+            line_coverage: result.line_coverage,
+            branch_coverage: result.branch_coverage,
+            success: result.success
+          }
         }),
       });
 
@@ -419,8 +430,8 @@ export default function Home() {
       } else {
         setPrResultUrl(githubRepoUrl + '/pulls');
       }
-    } catch (err: any) {
-      setPrError(err.message || 'An error occurred during Pull Request creation.');
+    } catch (err: unknown) {
+      setPrError((err as Error).message || 'An error occurred during Pull Request creation.');
     } finally {
       setPrLoading(false);
     }
@@ -437,7 +448,6 @@ export default function Home() {
         setModels([
           { id: 'gptmini', name: 'GPT-4o Mini (Azure)' },
           { id: 'llama', name: 'Llama 3.3 70B (Azure)' },
-          { id: 'deepseek', name: 'DeepSeek-R1 (Azure)' },
           { id: 'deepseekv3', name: 'DeepSeek-V3 (Azure)' }
         ]);
       });
@@ -447,13 +457,15 @@ export default function Home() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const view = params.get('view');
-      if (view === 'github') {
-        setWorkspaceMode('github');
-      } else if (view === 'workflow') {
-        setWorkspaceMode('workflow');
-      } else if (view === 'params') {
-        setWorkspaceMode('params');
-      }
+      setTimeout(() => {
+        if (view === 'github') {
+          setWorkspaceMode('github');
+        } else if (view === 'workflow') {
+          setWorkspaceMode('workflow');
+        } else if (view === 'params') {
+          setWorkspaceMode('params');
+        }
+      }, 0);
     }
   }, []);
 
@@ -462,6 +474,8 @@ export default function Home() {
     setError(null);
     setResult(null);
     setActiveTab('code');
+    setPrResultUrl('');
+    setPrError(null);
 
     try {
       const response = await fetch('http://localhost:3005/api/generate', {
@@ -475,7 +489,9 @@ export default function Home() {
           workflow,
           source: workspaceMode,
           filePath: selectedFilePath,
-          runMutation: runMutation
+          runMutation: runMutation,
+          repoDir: workspaceMode === 'github' ? githubTempDir : undefined,
+          methodName: selectedMethodName
         }),
       });
 
@@ -486,8 +502,8 @@ export default function Home() {
 
       const data = await response.json();
       setResult(data);
-    } catch (err: any) {
-      setError(err.message || 'An error occurred during test generation.');
+    } catch (err: unknown) {
+      setError((err as Error).message || 'An error occurred during test generation.');
     } finally {
       setLoading(false);
     }
@@ -555,6 +571,9 @@ export default function Home() {
               setPrError(null);
               setSelectedMethodName('');
               setSourceCode(DEFAULT_CODE);
+              setModel('gptmini');
+              setWorkflow('single');
+              setRunMutation(true);
               window.history.pushState({}, '', '/');
             }}
             className={`nav-link ${workspaceMode === 'manual' ? 'active' : ''}`}
@@ -581,7 +600,10 @@ export default function Home() {
               setPrError(null);
               setSelectedMethodName('');
               setGithubRepoData(null);
-              setSelectedMethodName('');
+              setGithubPat('');
+              setModel('gptmini');
+              setWorkflow('single');
+              setRunMutation(true);
               window.history.pushState({}, '', '/?view=github');
             }}
             className={`nav-link ${workspaceMode === 'github' ? 'active' : ''}`}
@@ -1843,7 +1865,14 @@ export default function Home() {
                                 key={mIdx}
                                 type="button"
                                 onClick={() => {
-                                  setSourceCode(method.body);
+                                  const classWrap = `namespace ${file.namespaceName || 'BenchmarkSourceProject'}
+{
+    public class ${file.className}
+    {
+${method.body.split('\n').map(line => '        ' + line).join('\n')}
+    }
+}`;
+                                  setSourceCode(classWrap);
                                   setSelectedFilePath(file.filePath);
                                   setSelectedMethodName(method.methodName);
                                   setResult(null);
@@ -1949,7 +1978,8 @@ export default function Home() {
             <button
               className="btn-primary"
               onClick={handleGenerate}
-              disabled={loading}
+              disabled={loading || (workspaceMode === 'github' && !selectedMethodName)}
+              style={{ opacity: loading || (workspaceMode === 'github' && !selectedMethodName) ? 0.5 : 1, cursor: loading || (workspaceMode === 'github' && !selectedMethodName) ? 'not-allowed' : 'pointer' }}
             >
               {loading ? (
                 <>
@@ -2006,7 +2036,7 @@ export default function Home() {
                     {/* Column 1: Initial State */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '1rem' }}>
                       <div style={{ fontWeight: 700, color: '#f8fafc', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.2rem', marginBottom: '0.2rem' }}>
-                        Initial State (ก่อนเริ่มลูป)
+                        Initial State (Before loops)
                       </div>
                       <div><strong>Success:</strong> <span style={{ color: result.initial_success ? '#34d399' : '#f87171' }}>{result.initial_success ? 'PASSED' : 'FAILED'}</span></div>
                       <div><strong>Line Coverage:</strong> {result.initial_line_coverage ?? 0}%</div>
@@ -2327,17 +2357,24 @@ export default function Home() {
                         <div className="flex flex-col gap-2">
                           <span className="text-sm font-semibold text-slate-300">Self-Healing Retries Log</span>
                           <div className="healing-list">
-                            {result.healing_log.map((log) => (
-                              <div key={log.attempt} className="healing-item">
-                                <div>
-                                  <span className="healing-badge">Heal #{log.attempt}</span>
-                                  <span className="text-xs text-slate-400 ml-2">
-                                    {log.success ? 'Successfully Compiled' : 'Compilation Failed'}
+                            {result.healing_log.map((log, idx) => (
+                              <div key={idx} className="healing-item flex-col items-start gap-2">
+                                <div className="w-full flex justify-between items-center">
+                                  <div>
+                                    <span className="healing-badge">Heal #{log.attempt}</span>
+                                    <span className="text-xs text-slate-400 ml-2">
+                                      {log.success ? 'Successfully Compiled' : 'Compilation Failed'}
+                                    </span>
+                                  </div>
+                                  <span className={`text-xs ${log.success ? 'text-emerald-400' : 'text-red-400'}`}>
+                                    {log.success ? '🛠️ Fixed' : '⚠️ Unresolved'}
                                   </span>
                                 </div>
-                                <span className={`text-xs ${log.success ? 'text-emerald-400' : 'text-red-400'}`}>
-                                  {log.success ? '🛠️ Fixed' : '⚠️ Unresolved'}
-                                </span>
+                                {log.errors && (
+                                  <div className="w-full mt-1 bg-red-900/10 border border-red-500/20 rounded p-2 text-[11px] font-mono text-red-300 whitespace-pre-wrap max-h-40 overflow-y-auto">
+                                    {log.errors}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -2349,19 +2386,36 @@ export default function Home() {
                         <div className="flex flex-col gap-2 mt-4">
                           <span className="text-sm font-semibold text-slate-300">Evaluator-Guided Refinement Log</span>
                           <div className="healing-list">
-                            {result.evaluator_loop_log.map((log) => (
-                              <div key={log.attempt} className="healing-item">
-                                <div>
-                                  <span className="healing-badge" style={{ backgroundColor: 'rgba(99, 102, 241, 0.15)', color: '#a5b4fc', borderColor: 'rgba(99, 102, 241, 0.3)' }}>
-                                    Refine #{log.attempt}
-                                  </span>
-                                  <span className="text-xs text-slate-400 ml-2">
-                                    Score: {log.score_before} 🎯 {log.score_after}
+                            {result.evaluator_loop_log.map((log, idx) => (
+                              <div key={idx} className="healing-item flex-col items-start gap-2">
+                                <div className="w-full flex justify-between items-center">
+                                  <div>
+                                    <span className="healing-badge" style={{ backgroundColor: 'rgba(99, 102, 241, 0.15)', color: '#a5b4fc', borderColor: 'rgba(99, 102, 241, 0.3)' }}>
+                                      Refine #{log.attempt}
+                                    </span>
+                                    <span className="text-xs text-slate-400 ml-2">
+                                      Score: {log.score_before} 🎯 {log.score_after}
+                                    </span>
+                                  </div>
+                                  <span className={`text-xs ${log.success ? 'text-emerald-400' : 'text-red-400'}`}>
+                                    {log.success ? '✅ Compiled' : '❌ Compile Error'}
                                   </span>
                                 </div>
-                                <span className={`text-xs ${log.success ? 'text-emerald-400' : 'text-red-400'}`}>
-                                  {log.success ? '✅ Compiled' : '❌ Compile Error'}
-                                </span>
+                                <div className="w-full mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-400">
+                                  {log.latency && <span>⏱️ Latency: {log.latency.toFixed(2)}s</span>}
+                                  {log.cost && <span>💰 Cost: ${log.cost.toFixed(5)}</span>}
+                                  {(log.worker_prompt_tokens !== undefined || log.worker_completion_tokens !== undefined) && (
+                                    <span>🤖 Worker Tokens: {(log.worker_prompt_tokens || 0)}/{(log.worker_completion_tokens || 0)}</span>
+                                  )}
+                                  {(log.evaluator_prompt_tokens !== undefined || log.evaluator_completion_tokens !== undefined) && (
+                                    <span>🧠 Eval Tokens: {(log.evaluator_prompt_tokens || 0)}/{(log.evaluator_completion_tokens || 0)}</span>
+                                  )}
+                                </div>
+                                {(log as any).errors && (
+                                  <div className="w-full mt-1 bg-red-900/10 border border-red-500/20 rounded p-2 text-[10px] font-mono text-red-300 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                                    {(log as any).errors}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>

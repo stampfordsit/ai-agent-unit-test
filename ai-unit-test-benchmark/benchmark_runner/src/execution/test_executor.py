@@ -2,21 +2,59 @@ import subprocess
 import shutil
 
 from pathlib import Path
+from src.execution.project_generator import ProjectGenerator
 
 class TestExecutor:
 
-    def __init__(self, mode="benchmark"):
-        if mode == "demo":
+    def __init__(self, mode="benchmark", repo_path=None, file_path=None, method_name=None):
+        self.mode = mode
+        self.method_name = method_name
+        if mode == "github_native":
+            # Native GitHub project execution mode
+            abs_repo_path = Path(repo_path).resolve()
+            # file_path might be relative to repo_root or absolute, handle both
+            if Path(file_path).is_absolute():
+                abs_file_path = Path(file_path).resolve()
+            else:
+                abs_file_path = (abs_repo_path / file_path).resolve()
+
+            generator = ProjectGenerator(str(abs_repo_path))
+            source_csproj = generator.find_csproj_for_file(str(abs_file_path))
+            if not source_csproj:
+                print(f"WARNING: Could not find .csproj for {abs_file_path}. Falling back to sandbox mode.")
+                # Fallback just in case
+                self.test_project_path = str(abs_repo_path)
+                self.source_project_path = str(abs_repo_path)
+                file_basename = abs_file_path.stem
+                self.source_file_path = str(abs_file_path)
+                test_filename = f"{file_basename}_{self.method_name}Tests.cs" if self.method_name else f"{file_basename}Tests.cs"
+                self.test_file_path = str(abs_repo_path / test_filename)
+            else:
+                test_csproj = generator.setup_test_project(source_csproj)
+                self.test_project_path = str(test_csproj.parent)
+                self.source_project_path = str(source_csproj.parent)
+                file_basename = abs_file_path.stem
+                self.source_file_path = str(abs_file_path)
+                test_filename = f"{file_basename}_{self.method_name}Tests.cs" if self.method_name else f"{file_basename}Tests.cs"
+                self.test_file_path = str(test_csproj.parent / test_filename)
+                
+        elif mode == "demo":
             self.test_project_path = "./csharp_projects/DemoTestProject"
             self.source_project_path = "./csharp_projects/DemoSourceProject"
+            self.source_file_path = f"{self.source_project_path}/SourceCode.cs"
+            self.test_file_path = f"{self.test_project_path}/GeneratedTests.cs"
         else:
             self.test_project_path = "./csharp_projects/BenchmarkTestProject"
             self.source_project_path = "./csharp_projects/BenchmarkSourceProject"
-
-        self.source_file_path = f"{self.source_project_path}/SourceCode.cs"
-        self.test_file_path = f"{self.test_project_path}/GeneratedTests.cs"
+            self.source_file_path = f"{self.source_project_path}/SourceCode.cs"
+            self.test_file_path = f"{self.test_project_path}/GeneratedTests.cs"
 
     def inject_source_code(self, source_code: str):
+        if self.mode == "github_native":
+            # Do not inject source code in native mode, the file is already there!
+            print("SKIPPING SOURCE CODE INJECTION (Native Mode)")
+            return
+            
         print("WRITING SOURCE CODE")
 
         import re
@@ -55,6 +93,12 @@ class TestExecutor:
 
         shutil.rmtree(f"{self.test_project_path}/bin",ignore_errors=True)
         shutil.rmtree(f"{self.test_project_path}/obj",ignore_errors=True)
+        
+        # Determine paths to ignore in Coverlet
+        # We only want coverage for the source project, ignore the test project itself
+        # Coverlet uses [Assembly]* or similar. By default, MSBuild property excludes tests, but we can be explicit if needed.
+        # It's usually fine by default.
+
         result = subprocess.run(["dotnet","test","/p:CollectCoverage=true","/p:CoverletOutputFormat=cobertura"],cwd=self.test_project_path,capture_output=True,text=True,encoding="utf-8",errors="replace")
         return {
             "success": result.returncode == 0,
