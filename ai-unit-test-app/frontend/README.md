@@ -27,6 +27,12 @@ The web application is split into three main modules accessible via the navigati
    - **GitHub Ingest Logs**: Submissions triggered from remote repositories.
    - **CI/CD Hook Logs**: Records of local commits scanned and validated by the pre-commit Git hook.
 
+4. **CI/CD Integration & Native Execution (New)**:
+   - **Full-Repo Cloning**: Instead of partial clones, the system pulls the entire repository dependency tree, allowing C# projects to compile and resolve dependencies correctly natively.
+   - **Project Generator**: Automatically scans for `.csproj` files linked to target `.cs` files. If a test project doesn't exist, it intelligently scaffolds a new `xUnit` test project on the fly (adding Moq and Coverlet automatically).
+   - **Native Execution**: AI-generated tests are injected and executed directly inside the cloned GitHub project rather than a generic sandbox, ensuring real-world compilation and dependency resolution.
+   - **Automated Webhook Actions**: Features a dedicated `POST /api/cicd/webhook` for GitHub Actions integration. You can embed the provided `ai-unit-test.yml` into any C# project to trigger AI unit test generation and validation automatically on Pull Requests using the `ultimate_hybrid` workflow.
+
 ## Project Setup
 
 Ensure you have [Node.js](https://nodejs.org/) installed.

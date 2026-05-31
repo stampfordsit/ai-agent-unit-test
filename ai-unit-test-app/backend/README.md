@@ -57,6 +57,7 @@ Executes unit test generation.
 
 ### `POST /api/github/clone`
 Clones a public GitHub repository locally, parses C# source files using the Roslyn Parser CLI, and extracts public method details.
+- **Note**: This endpoint automatically cleans up old `temp_repo_*` directories before cloning to prevent disk space exhaustion.
 - **Request Body**: `{ "repoUrl": string }`
 - **Response**: `{ "tempDir": string, "files": Array<{ filePath: string, className: string, methods: Array<{ methodName: string, signature: string, body: string }> }> }`
 
@@ -65,6 +66,12 @@ Creates a Git branch, commits the generated test, pushes it to the remote reposi
 - **Request Body**: `{ "repoUrl": string, "tempDir": string, "filePath": string, "testCode": string, "githubPat"?: string }`
 - **Note**: `githubPat` can be supplied directly from the UI. If omitted, the server falls back to `GITHUB_PAT` in `benchmark_runner/.env`.
 - **Response**: Detailed Pull Request object returned by the GitHub API.
+
+### `POST /api/cicd/webhook`
+Webhook endpoint for automated GitHub Action CI/CD pipelines. This triggers the native execution workflow without UI interaction.
+- **Request Body**: `{ "repoUrl": string, "prNumber": string, "branch": string, "workflow"?: string }`
+- **Default Workflow**: `ultimate_hybrid`
+- **Response**: `{ "status": "Pipeline triggered", "repoUrl": string, "workflow": string }` (Runs asynchronously in the background)
 
 ### `GET /api/dashboard/benchmarks`
 Recursively scans the `results/reports` and `benchmark_datasets` directories to build and return a complete array of all gold standard benchmark dataset runs with matched source code and expected tests.

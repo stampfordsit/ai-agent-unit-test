@@ -703,7 +703,7 @@ export default function Dashboard() {
                             <td className="font-mono text-indigo-400 font-bold">{r.benchmark_id}</td>
                             <td className="text-slate-300 font-semibold text-xs">{r.category}</td>
                             <td>{r.model.replace('Llama-3.3-70B-Instruct', 'Llama-3.3').replace('DeepSeek-V3.2', 'DeepSeek-V3')}</td>
-                            <td className="font-mono text-[10px] text-slate-400 bg-slate-900/40 px-2 py-0.5 rounded border border-white/5 self-start inline-block mt-2">
+                            <td className="font-mono text-xs text-slate-400">
                               {r.workflow}
                             </td>
                             <td>
@@ -1700,7 +1700,59 @@ export default function Dashboard() {
                         <span className="text-xs text-slate-400">Source: results/summary/{selectedVersion}/{selectedWorkflow}/evaluator/evaluator_guided_analysis.json</span>
                       </div>
                       {staticSummary.evaluatorSummary ? (
-                        <div className="table-wrapper">
+                        <>
+                          <div className="panel p-6 border border-white/5 bg-slate-900/10 rounded-lg mb-6">
+                            <h3 className="chart-title mb-4">Initial vs Final Score (Evaluator Grader)</h3>
+                            <div className="flex flex-col gap-4">
+                              <div className="flex gap-4 justify-end text-[10px] mb-2 text-slate-400">
+                                <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-indigo-500 rounded-sm" /> Avg Initial Score</div>
+                                <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-purple-500 rounded-sm" /> Avg Final Score</div>
+                              </div>
+                              <div style={{ position: 'relative', width: '100%', overflowX: 'auto', display: 'flex', justifyContent: 'center' }}>
+                                <svg width={600} height={270}>
+                                  <defs>
+                                    <linearGradient id="initScoreGrad" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="0%" stopColor="#6366f1" />
+                                      <stop offset="100%" stopColor="#4f46e5" stopOpacity="0.4" />
+                                    </linearGradient>
+                                    <linearGradient id="finalScoreGrad" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="0%" stopColor="#a855f7" />
+                                      <stop offset="100%" stopColor="#7e22ce" stopOpacity="0.4" />
+                                    </linearGradient>
+                                  </defs>
+                                  {[0, 25, 50, 75, 100].map((v) => {
+                                    const y = 220 - (v / 100) * 220 + 25;
+                                    return (
+                                      <g key={v}>
+                                        <line x1={50} y1={y} x2={580} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+                                        <text x={42} y={y + 4} fill="var(--text-secondary)" fontSize="9" textAnchor="end">{v}</text>
+                                      </g>
+                                    );
+                                  })}
+                                  {staticSummary.evaluatorSummary.map((d: any, i: number) => {
+                                    const barWidth = 24;
+                                    const groupX = 60 + i * (barWidth * 2 + 40) + 20;
+                                    const initScore = Number(d.avg_initial_score) || 0;
+                                    const finalScore = Number(d.avg_final_score) || 0;
+                                    const yInit = 220 - (initScore / 100) * 220 + 25;
+                                    const yFinal = 220 - (finalScore / 100) * 220 + 25;
+                                    return (
+                                      <g key={d.model}>
+                                        <rect x={groupX} y={yInit || 0} width={barWidth} height={(initScore / 100) * 220 || 0} fill="url(#initScoreGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
+                                        <text x={groupX + barWidth / 2} y={(yInit || 0) - 4} fill="#818cf8" fontSize="9" fontWeight="bold" textAnchor="middle">{initScore}</text>
+                                        
+                                        <rect x={groupX + barWidth} y={yFinal || 0} width={barWidth} height={(finalScore / 100) * 220 || 0} fill="url(#finalScoreGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
+                                        <text x={groupX + barWidth + barWidth / 2} y={(yFinal || 0) - 4} fill="#c084fc" fontSize="9" fontWeight="bold" textAnchor="middle">{finalScore}</text>
+                                        
+                                        <text x={groupX + barWidth} y={265} fill="var(--text-secondary)" fontSize="9" fontWeight="700" textAnchor="middle">{d.model.replace(/_/g, ' ').replace('Instruct', '').trim()}</text>
+                                      </g>
+                                    );
+                                  })}
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="table-wrapper">
                           <table className="dashboard-table">
                             <thead>
                               <tr>
@@ -1734,6 +1786,7 @@ export default function Dashboard() {
                             </tbody>
                           </table>
                         </div>
+                        </>
                       ) : (
                         <p className="text-sm text-slate-500 py-4 text-center">No evaluator guided refinement analysis data available. (Ensure this workflow runs the Evaluator loop and you have compiled the reports)</p>
                       )}
@@ -1748,7 +1801,59 @@ export default function Dashboard() {
                         <span className="text-xs text-slate-400">Source: results/summary/{selectedVersion}/{selectedWorkflow}/selector/best_of_n_analysis.json</span>
                       </div>
                       {staticSummary.selectorSummary ? (
-                        <div className="table-wrapper">
+                        <>
+                          <div className="panel p-6 border border-white/5 bg-slate-900/10 rounded-lg mb-6">
+                            <h3 className="chart-title mb-4">First Candidate vs Best Selected Score</h3>
+                            <div className="flex flex-col gap-4">
+                              <div className="flex gap-4 justify-end text-[10px] mb-2 text-slate-400">
+                                <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-sky-500 rounded-sm" /> Avg First Score</div>
+                                <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-emerald-500 rounded-sm" /> Avg Selected Score</div>
+                              </div>
+                              <div style={{ position: 'relative', width: '100%', overflowX: 'auto', display: 'flex', justifyContent: 'center' }}>
+                                <svg width={600} height={270}>
+                                  <defs>
+                                    <linearGradient id="firstScoreGrad" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="0%" stopColor="#38bdf8" />
+                                      <stop offset="100%" stopColor="#0284c7" stopOpacity="0.4" />
+                                    </linearGradient>
+                                    <linearGradient id="selectedScoreGrad" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="0%" stopColor="#34d399" />
+                                      <stop offset="100%" stopColor="#059669" stopOpacity="0.4" />
+                                    </linearGradient>
+                                  </defs>
+                                  {[0, 25, 50, 75, 100].map((v) => {
+                                    const y = 220 - (v / 100) * 220 + 25;
+                                    return (
+                                      <g key={v}>
+                                        <line x1={50} y1={y} x2={580} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+                                        <text x={42} y={y + 4} fill="var(--text-secondary)" fontSize="9" textAnchor="end">{v}</text>
+                                      </g>
+                                    );
+                                  })}
+                                  {staticSummary.selectorSummary.map((d: any, i: number) => {
+                                    const barWidth = 24;
+                                    const groupX = 60 + i * (barWidth * 2 + 40) + 20;
+                                    const firstScore = Number(d.avg_first_candidate_score) || 0;
+                                    const selectedScore = Number(d.avg_selected_score) || 0;
+                                    const yFirst = 220 - (firstScore / 100) * 220 + 25;
+                                    const ySel = 220 - (selectedScore / 100) * 220 + 25;
+                                    return (
+                                      <g key={d.model}>
+                                        <rect x={groupX} y={yFirst || 0} width={barWidth} height={(firstScore / 100) * 220 || 0} fill="url(#firstScoreGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
+                                        <text x={groupX + barWidth / 2} y={(yFirst || 0) - 4} fill="#7dd3fc" fontSize="9" fontWeight="bold" textAnchor="middle">{firstScore}</text>
+                                        
+                                        <rect x={groupX + barWidth} y={ySel || 0} width={barWidth} height={(selectedScore / 100) * 220 || 0} fill="url(#selectedScoreGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
+                                        <text x={groupX + barWidth + barWidth / 2} y={(ySel || 0) - 4} fill="#6ee7b7" fontSize="9" fontWeight="bold" textAnchor="middle">{selectedScore}</text>
+                                        
+                                        <text x={groupX + barWidth} y={265} fill="var(--text-secondary)" fontSize="9" fontWeight="700" textAnchor="middle">{d.model.replace(/_/g, ' ').replace('Instruct', '').trim()}</text>
+                                      </g>
+                                    );
+                                  })}
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="table-wrapper">
                           <table className="dashboard-table">
                             <thead>
                               <tr>
@@ -1780,6 +1885,7 @@ export default function Dashboard() {
                             </tbody>
                           </table>
                         </div>
+                        </>
                       ) : (
                         <p className="text-sm text-slate-500 py-4 text-center">No candidate selector analysis data available. (Ensure this workflow generates candidates and you have compiled the reports)</p>
                       )}
@@ -1794,7 +1900,49 @@ export default function Dashboard() {
                         <span className="text-xs text-slate-400">Source: results/summary/{selectedVersion}/{selectedWorkflow}/mutation/mutation_analysis.json</span>
                       </div>
                       {staticSummary.mutationSummary ? (
-                        <div className="table-wrapper">
+                        <>
+                          <div className="panel p-6 border border-white/5 bg-slate-900/10 rounded-lg mb-6">
+                            <h3 className="chart-title mb-4">Mutation Score Performance</h3>
+                            <div className="flex flex-col gap-4">
+                              <div className="flex gap-4 justify-end text-[10px] mb-2 text-slate-400">
+                                <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-rose-500 rounded-sm" /> Avg Mutation Score</div>
+                              </div>
+                              <div style={{ position: 'relative', width: '100%', overflowX: 'auto', display: 'flex', justifyContent: 'center' }}>
+                                <svg width={600} height={270}>
+                                  <defs>
+                                    <linearGradient id="mutScoreGrad" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="0%" stopColor="#f43f5e" />
+                                      <stop offset="100%" stopColor="#be123c" stopOpacity="0.4" />
+                                    </linearGradient>
+                                  </defs>
+                                  {[0, 25, 50, 75, 100].map((v) => {
+                                    const y = 220 - (v / 100) * 220 + 25;
+                                    return (
+                                      <g key={v}>
+                                        <line x1={50} y1={y} x2={580} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+                                        <text x={42} y={y + 4} fill="var(--text-secondary)" fontSize="9" textAnchor="end">{v}</text>
+                                      </g>
+                                    );
+                                  })}
+                                  {staticSummary.mutationSummary.map((d: any, i: number) => {
+                                    const barWidth = 36;
+                                    const groupX = 60 + i * (barWidth + 50) + 20;
+                                    const mutScore = Number(d.avg_mutation_score) || 0;
+                                    const yMut = 220 - (mutScore / 100) * 220 + 25;
+                                    return (
+                                      <g key={d.model}>
+                                        <rect x={groupX} y={yMut || 0} width={barWidth} height={(mutScore / 100) * 220 || 0} fill="url(#mutScoreGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
+                                        <text x={groupX + barWidth / 2} y={(yMut || 0) - 4} fill="#fda4af" fontSize="9" fontWeight="bold" textAnchor="middle">{mutScore}%</text>
+                                        
+                                        <text x={groupX + barWidth / 2} y={265} fill="var(--text-secondary)" fontSize="9" fontWeight="700" textAnchor="middle">{d.model.replace(/_/g, ' ').replace('Instruct', '').trim()}</text>
+                                      </g>
+                                    );
+                                  })}
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="table-wrapper">
                           <table className="dashboard-table">
                             <thead>
                               <tr>
@@ -1832,6 +1980,7 @@ export default function Dashboard() {
                             </tbody>
                           </table>
                         </div>
+                        </>
                       ) : (
                         <p className="text-sm text-slate-500 py-4 text-center">
                           No mutation testing analysis data available. (Ensure you run with `--enable-mutation` flag and run the summary compiler)
@@ -2194,12 +2343,54 @@ export default function Dashboard() {
                           <span className="text-xs font-semibold text-slate-400">Self-Healing Retries Log ({selectedRun.healing_log.length})</span>
                           <div className="healing-list">
                             {selectedRun.healing_log.map((log) => (
-                              <div key={log.attempt} className="healing-item text-xs">
-                                <div>
-                                  <span className="healing-badge">Healing retry #{log.attempt}</span>
-                                  <span className="text-slate-400 ml-2">{log.success ? 'Compiled successfully' : 'Compilation failed'}</span>
+                              <div key={log.attempt} className="healing-item text-xs flex flex-col gap-2 items-start">
+                                <div className="w-full flex justify-between items-center">
+                                  <div>
+                                    <span className="healing-badge">Healing retry #{log.attempt}</span>
+                                    <span className="text-slate-400 ml-2">{log.success ? 'Compiled successfully' : 'Compilation failed'}</span>
+                                  </div>
+                                  <span className={log.success ? 'text-emerald-400' : 'text-red-400'}>{log.success ? 'Fixed' : 'Failed'}</span>
                                 </div>
-                                <span className={log.success ? 'text-emerald-400' : 'text-red-400'}>{log.success ? 'Fixed' : 'Failed'}</span>
+                                {log.errors && (
+                                  <div className="w-full mt-1 bg-red-900/10 border border-red-500/20 rounded p-2 text-[10px] font-mono text-red-300 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                                    {log.errors}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Evaluator log */}
+                      {selectedRun.evaluator_loop_log && selectedRun.evaluator_loop_log.length > 0 && (
+                        <div className="flex flex-col gap-2 mt-4">
+                          <span className="text-xs font-semibold text-slate-400">Evaluator-Guided Refinement Log ({selectedRun.evaluator_loop_log.length})</span>
+                          <div className="healing-list">
+                            {selectedRun.evaluator_loop_log.map((log) => (
+                              <div key={log.attempt} className="healing-item text-xs flex flex-col gap-2 items-start">
+                                <div className="w-full flex justify-between items-center">
+                                  <div>
+                                    <span className="healing-badge" style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', borderColor: 'rgba(99,102,241,0.3)' }}>Refine #{log.attempt}</span>
+                                    <span className="text-slate-400 ml-2">Score: {log.score_before} 🎯 {log.score_after}</span>
+                                  </div>
+                                  <span className={log.success ? 'text-emerald-400' : 'text-red-400'}>{log.success ? '✅ Compiled' : '❌ Compile Error'}</span>
+                                </div>
+                                <div className="w-full mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-400">
+                                  {(log as any).latency && <span>⏱️ Latency: {(log as any).latency.toFixed(2)}s</span>}
+                                  {(log as any).cost && <span>💰 Cost: ${(log as any).cost.toFixed(5)}</span>}
+                                  {((log as any).worker_prompt_tokens !== undefined || (log as any).worker_completion_tokens !== undefined) && (
+                                    <span>🤖 Worker Tokens: {((log as any).worker_prompt_tokens || 0)}/{((log as any).worker_completion_tokens || 0)}</span>
+                                  )}
+                                  {((log as any).evaluator_prompt_tokens !== undefined || (log as any).evaluator_completion_tokens !== undefined) && (
+                                    <span>🧠 Eval Tokens: {((log as any).evaluator_prompt_tokens || 0)}/{((log as any).evaluator_completion_tokens || 0)}</span>
+                                  )}
+                                </div>
+                                {(log as any).errors && (
+                                  <div className="w-full mt-1 bg-red-900/10 border border-red-500/20 rounded p-2 text-[10px] font-mono text-red-300 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                                    {(log as any).errors}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -2605,6 +2796,66 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </div>
+
+                      {/* Healing log for selectedSubmission */}
+                      {selectedSubmission.result.healing_log && selectedSubmission.result.healing_log.length > 0 && (
+                        <div className="flex flex-col gap-2 mt-2">
+                          <span className="text-xs font-semibold text-slate-400">Self-Healing Retries Log ({selectedSubmission.result.healing_log.length})</span>
+                          <div className="healing-list">
+                            {selectedSubmission.result.healing_log.map((log: any, idx: number) => (
+                              <div key={idx} className="healing-item text-xs flex flex-col gap-2 items-start">
+                                <div className="w-full flex justify-between items-center">
+                                  <div>
+                                    <span className="healing-badge">Healing retry #{log.attempt}</span>
+                                    <span className="text-slate-400 ml-2">{log.success ? 'Compiled successfully' : 'Compilation failed'}</span>
+                                  </div>
+                                  <span className={log.success ? 'text-emerald-400' : 'text-red-400'}>{log.success ? 'Fixed' : 'Failed'}</span>
+                                </div>
+                                {log.errors && (
+                                  <div className="w-full mt-1 bg-red-900/10 border border-red-500/20 rounded p-2 text-[10px] font-mono text-red-300 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                                    {log.errors}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Evaluator log for selectedSubmission */}
+                      {selectedSubmission.result.evaluator_loop_log && selectedSubmission.result.evaluator_loop_log.length > 0 && (
+                        <div className="flex flex-col gap-2 mt-4">
+                          <span className="text-xs font-semibold text-slate-400">Evaluator-Guided Refinement Log ({selectedSubmission.result.evaluator_loop_log.length})</span>
+                          <div className="healing-list">
+                            {selectedSubmission.result.evaluator_loop_log.map((log: any, idx: number) => (
+                              <div key={idx} className="healing-item text-xs flex flex-col gap-2 items-start">
+                                <div className="w-full flex justify-between items-center">
+                                  <div>
+                                    <span className="healing-badge" style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', borderColor: 'rgba(99,102,241,0.3)' }}>Refine #{log.attempt}</span>
+                                    <span className="text-slate-400 ml-2">Score: {log.score_before} 🎯 {log.score_after}</span>
+                                  </div>
+                                  <span className={log.success ? 'text-emerald-400' : 'text-red-400'}>{log.success ? '✅ Compiled' : '❌ Compile Error'}</span>
+                                </div>
+                                <div className="w-full mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-400">
+                                  {log.latency && <span>⏱️ Latency: {log.latency.toFixed(2)}s</span>}
+                                  {log.cost && <span>💰 Cost: ${log.cost.toFixed(5)}</span>}
+                                  {(log.worker_prompt_tokens !== undefined || log.worker_completion_tokens !== undefined) && (
+                                    <span>🤖 Worker Tokens: {(log.worker_prompt_tokens || 0)}/{(log.worker_completion_tokens || 0)}</span>
+                                  )}
+                                  {(log.evaluator_prompt_tokens !== undefined || log.evaluator_completion_tokens !== undefined) && (
+                                    <span>🧠 Eval Tokens: {(log.evaluator_prompt_tokens || 0)}/{(log.evaluator_completion_tokens || 0)}</span>
+                                  )}
+                                </div>
+                                {log.errors && (
+                                  <div className="w-full mt-1 bg-red-900/10 border border-red-500/20 rounded p-2 text-[10px] font-mono text-red-300 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                                    {log.errors}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Mutation Testing Panel */}
                       {selectedSubmission.result.mutation_score != null && (
@@ -3103,8 +3354,8 @@ const ModelComparisonChart = ({ data }: { data: any[] }) => {
         <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-emerald-500 rounded-sm" /> Line Cov</div>
         <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-cyan-500 rounded-sm" /> Branch Cov</div>
       </div>
-      <div style={{ position: 'relative', width: '100%', overflowX: 'auto' }}>
-        <svg width="100%" height={height + 50} style={{ minWidth: '400px' }}>
+      <div style={{ position: 'relative', width: '100%', overflowX: 'auto', display: 'flex', justifyContent: 'center' }}>
+        <svg width={700} height={height + 50} style={{ minWidth: '400px' }}>
           {[0, 25, 50, 75, 100].map((v) => {
             const y = height - (v / 100) * height + paddingTop;
             return (
@@ -3117,23 +3368,26 @@ const ModelComparisonChart = ({ data }: { data: any[] }) => {
 
           {chartData.map((d, i) => {
             const groupX = paddingLeft + i * (barWidth * 3 + groupSpacing) + 20;
-            const yScore = height - (d.score / 100) * height + paddingTop;
-            const yLine = height - (d.line / 100) * height + paddingTop;
-            const yBranch = height - (d.branch / 100) * height + paddingTop;
+            const pScore = Number(d.score) || 0;
+            const pLine = Number(d.line) || 0;
+            const pBranch = Number(d.branch) || 0;
+            const yScore = height - (pScore / 100) * height + paddingTop;
+            const yLine = height - (pLine / 100) * height + paddingTop;
+            const yBranch = height - (pBranch / 100) * height + paddingTop;
 
             return (
               <g key={d.model}>
                 {/* Score Bar */}
-                <rect x={groupX} y={yScore} width={barWidth} height={(d.score / 100) * height} fill="url(#scoreGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
-                <text x={groupX + barWidth / 2} y={yScore - 4} fill="#a5b4fc" fontSize="9" fontWeight="bold" textAnchor="middle">{d.score}%</text>
+                <rect x={groupX} y={yScore || 0} width={barWidth} height={(pScore / 100) * height || 0} fill="url(#scoreGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
+                <text x={groupX + barWidth / 2} y={(yScore || 0) - 4} fill="#a5b4fc" fontSize="9" fontWeight="bold" textAnchor="middle">{pScore}%</text>
 
                 {/* Line Coverage Bar */}
-                <rect x={groupX + barWidth} y={yLine} width={barWidth} height={(d.line / 100) * height} fill="url(#lineGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
-                <text x={groupX + barWidth + barWidth / 2} y={yLine - 4} fill="#34d399" fontSize="9" fontWeight="bold" textAnchor="middle">{d.line}%</text>
+                <rect x={groupX + barWidth} y={yLine || 0} width={barWidth} height={(pLine / 100) * height || 0} fill="url(#lineGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
+                <text x={groupX + barWidth + barWidth / 2} y={(yLine || 0) - 4} fill="#34d399" fontSize="9" fontWeight="bold" textAnchor="middle">{pLine}%</text>
 
                 {/* Branch Coverage Bar */}
-                <rect x={groupX + barWidth * 2} y={yBranch} width={barWidth} height={(d.branch / 100) * height} fill="url(#branchGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
-                <text x={groupX + barWidth * 2 + barWidth / 2} y={yBranch - 4} fill="#22d3ee" fontSize="9" fontWeight="bold" textAnchor="middle">{d.branch}%</text>
+                <rect x={groupX + barWidth * 2} y={yBranch || 0} width={barWidth} height={(pBranch / 100) * height || 0} fill="url(#branchGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
+                <text x={groupX + barWidth * 2 + barWidth / 2} y={(yBranch || 0) - 4} fill="#22d3ee" fontSize="9" fontWeight="bold" textAnchor="middle">{pBranch}%</text>
 
                 {/* Axis Label */}
                 <text x={groupX + barWidth * 1.5} y={height + paddingTop + 20} fill="var(--text-secondary)" fontSize="9" fontWeight="700" textAnchor="middle">
@@ -3239,8 +3493,8 @@ const StaticModelChart = ({ data }: { data: any[] }) => {
         <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-sky-500 rounded-sm" /> Line Cov</div>
         <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-cyan-500 rounded-sm" /> Branch Cov</div>
       </div>
-      <div style={{ position: 'relative', width: '100%', overflowX: 'auto' }}>
-        <svg width="100%" height={height + 50} style={{ minWidth: '400px' }}>
+      <div style={{ position: 'relative', width: '100%', overflowX: 'auto', display: 'flex', justifyContent: 'center' }}>
+        <svg width={700} height={height + 50} style={{ minWidth: '400px' }}>
           {[0, 25, 50, 75, 100].map((v) => {
             const y = height - (v / 100) * height + paddingTop;
             return (
@@ -3253,23 +3507,26 @@ const StaticModelChart = ({ data }: { data: any[] }) => {
 
           {chartData.map((d, i) => {
             const groupX = paddingLeft + i * (barWidth * 3 + groupSpacing) + 20;
-            const yPass = height - (d.passRate / 100) * height + paddingTop;
-            const yLine = height - (d.lineCoverage / 100) * height + paddingTop;
-            const yBranch = height - (d.branchCoverage / 100) * height + paddingTop;
+            const pRate = Number(d.passRate) || 0;
+            const lCov = Number(d.lineCoverage) || 0;
+            const bCov = Number(d.branchCoverage) || 0;
+            const yPass = height - (pRate / 100) * height + paddingTop;
+            const yLine = height - (lCov / 100) * height + paddingTop;
+            const yBranch = height - (bCov / 100) * height + paddingTop;
 
             return (
               <g key={d.model}>
                 {/* Pass Rate Bar */}
-                <rect x={groupX} y={yPass} width={barWidth} height={(d.passRate / 100) * height} fill="url(#passGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
-                <text x={groupX + barWidth / 2} y={yPass - 4} fill="#34d399" fontSize="9" fontWeight="bold" textAnchor="middle">{d.passRate}%</text>
+                <rect x={groupX} y={yPass || 0} width={barWidth} height={(pRate / 100) * height || 0} fill="url(#passGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
+                <text x={groupX + barWidth / 2} y={(yPass || 0) - 4} fill="#34d399" fontSize="9" fontWeight="bold" textAnchor="middle">{pRate}%</text>
 
                 {/* Line Coverage Bar */}
-                <rect x={groupX + barWidth} y={yLine} width={barWidth} height={(d.lineCoverage / 100) * height} fill="url(#lineGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
-                <text x={groupX + barWidth + barWidth / 2} y={yLine - 4} fill="#38bdf8" fontSize="9" fontWeight="bold" textAnchor="middle">{d.lineCoverage}%</text>
+                <rect x={groupX + barWidth} y={yLine || 0} width={barWidth} height={(lCov / 100) * height || 0} fill="url(#lineGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
+                <text x={groupX + barWidth + barWidth / 2} y={(yLine || 0) - 4} fill="#38bdf8" fontSize="9" fontWeight="bold" textAnchor="middle">{lCov}%</text>
 
                 {/* Branch Coverage Bar */}
-                <rect x={groupX + barWidth * 2} y={yBranch} width={barWidth} height={(d.branchCoverage / 100) * height} fill="url(#branchGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
-                <text x={groupX + barWidth * 2 + barWidth / 2} y={yBranch - 4} fill="#22d3ee" fontSize="9" fontWeight="bold" textAnchor="middle">{d.branchCoverage}%</text>
+                <rect x={groupX + barWidth * 2} y={yBranch || 0} width={barWidth} height={(bCov / 100) * height || 0} fill="url(#branchGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
+                <text x={groupX + barWidth * 2 + barWidth / 2} y={(yBranch || 0) - 4} fill="#22d3ee" fontSize="9" fontWeight="bold" textAnchor="middle">{bCov}%</text>
 
                 {/* Axis Label */}
                 <text x={groupX + barWidth * 1.5} y={height + paddingTop + 20} fill="var(--text-secondary)" fontSize="9" fontWeight="700" textAnchor="middle">
@@ -3386,8 +3643,8 @@ const CategoryPerformanceChart = ({ data }: { data: any[] }) => {
 
                   return (
                     <g key={model}>
-                      <rect x={paddingLeft} y={barY} width={Math.max(barWidth, 2)} height="12" fill={getModelGradient(model)} rx="2" className="transition-all duration-300 hover:opacity-85" />
-                      <text x={paddingLeft + Math.max(barWidth, 2) + 6} y={barY + 9} fill="#cbd5e1" fontSize="9" fontWeight="bold">
+                      <rect x={paddingLeft} y={barY || 0} width={Math.max(barWidth || 0, 2)} height="12" fill={getModelGradient(model)} rx="2" className="transition-all duration-300 hover:opacity-85" />
+                      <text x={paddingLeft + Math.max(barWidth || 0, 2) + 6} y={(barY || 0) + 9} fill="#cbd5e1" fontSize="9" fontWeight="bold">
                         {item.pass_rate}%
                       </text>
                     </g>
@@ -3443,11 +3700,11 @@ const CategorySplitChart = ({ data }: { data: any[] }) => {
 
           {data.map((d, i) => {
             const groupX = paddingLeft + i * (barWidth * 2 + groupSpacing) + 30;
-            const synthPass = d.synthetic?.pass_rate_pct || 0;
-            const rwPass = d.real_world?.pass_rate_pct || 0;
+            const synthPass = Number(d.synthetic?.pass_rate_pct) || 0;
+            const rwPass = Number(d.real_world?.pass_rate_pct) || 0;
 
-            const ySynth = height - (synthPass / 100) * height + paddingTop;
-            const yRw = height - (rwPass / 100) * height + paddingTop;
+            const ySynth = height - (synthPass / 100) * height + paddingTop || 0;
+            const yRw = height - (rwPass / 100) * height + paddingTop || 0;
 
             const hasSynth = d.synthetic && d.synthetic.total > 0;
             const hasRw = d.real_world && d.real_world.total > 0;
@@ -3457,8 +3714,8 @@ const CategorySplitChart = ({ data }: { data: any[] }) => {
                 {/* Synthetic Bar */}
                 {hasSynth ? (
                   <>
-                    <rect x={groupX} y={ySynth} width={barWidth} height={(synthPass / 100) * height} fill="url(#splitSynthGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
-                    <text x={groupX + barWidth / 2} y={ySynth - 4} fill="#38bdf8" fontSize="9" fontWeight="bold" textAnchor="middle">{synthPass}%</text>
+                    <rect x={groupX} y={ySynth || 0} width={barWidth} height={(synthPass / 100) * height || 0} fill="url(#splitSynthGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
+                    <text x={groupX + barWidth / 2} y={(ySynth || 0) - 4} fill="#38bdf8" fontSize="9" fontWeight="bold" textAnchor="middle">{synthPass}%</text>
                   </>
                 ) : (
                   <text x={groupX + barWidth / 2} y={height + paddingTop - 10} fill="var(--text-secondary)" fontSize="8" textAnchor="middle">N/A</text>
@@ -3467,8 +3724,8 @@ const CategorySplitChart = ({ data }: { data: any[] }) => {
                 {/* Real-World Bar */}
                 {hasRw ? (
                   <>
-                    <rect x={groupX + barWidth} y={yRw} width={barWidth} height={(rwPass / 100) * height} fill="url(#splitRwGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
-                    <text x={groupX + barWidth + barWidth / 2} y={yRw - 4} fill="#34d399" fontSize="9" fontWeight="bold" textAnchor="middle">{rwPass}%</text>
+                    <rect x={groupX + barWidth} y={yRw || 0} width={barWidth} height={(rwPass / 100) * height || 0} fill="url(#splitRwGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
+                    <text x={groupX + barWidth + barWidth / 2} y={(yRw || 0) - 4} fill="#34d399" fontSize="9" fontWeight="bold" textAnchor="middle">{rwPass}%</text>
                   </>
                 ) : (
                   <text x={groupX + barWidth + barWidth / 2} y={height + paddingTop - 10} fill="var(--text-secondary)" fontSize="8" textAnchor="middle">N/A</text>
@@ -3498,7 +3755,7 @@ const CostEfficiencyChart = ({ data }: { data: any[] }) => {
   const svgWidth = 600;
   const innerWidth = svgWidth - paddingLeft - paddingRight;
 
-  const maxVal = Math.max(...data.map(d => d.coverage_per_dollar || 1));
+  const maxVal = Math.max(...data.map(d => Number(d.coverage_per_dollar) || 1).filter(n => !isNaN(n)), 10);
 
   return (
     <div className="flex flex-col gap-4">
@@ -3524,16 +3781,16 @@ const CostEfficiencyChart = ({ data }: { data: any[] }) => {
 
           {data.map((d, i) => {
             const y = paddingTop + i * (barWidth + spacing) + 10;
-            const w = ((d.coverage_per_dollar || 0) / maxVal) * innerWidth;
+            const w = ((Number(d.coverage_per_dollar) || 0) / maxVal) * innerWidth;
 
             return (
               <g key={d.model}>
                 <text x={paddingLeft - 10} y={y + barWidth / 2 + 4} fill="var(--text-primary)" fontSize="9" fontWeight="700" textAnchor="end">
                   {d.model.replace(/_/g, ' ').replace('Instruct', '').trim()}
                 </text>
-                <rect x={paddingLeft} y={y} width={Math.max(w, 2)} height={barWidth} fill="url(#costGrad)" rx="3" className="transition-all duration-300 hover:opacity-85" />
-                <text x={paddingLeft + Math.max(w, 2) + 8} y={y + barWidth / 2 + 4} fill="#fbbf24" fontSize="9" fontWeight="bold">
-                  {Math.round(d.coverage_per_dollar).toLocaleString()}%/$
+                <rect x={paddingLeft} y={y || 0} width={Math.max(w || 0, 2)} height={barWidth} fill="url(#costGrad)" rx="3" className="transition-all duration-300 hover:opacity-85" />
+                <text x={paddingLeft + Math.max(w || 0, 2) + 8} y={(y || 0) + barWidth / 2 + 4} fill="#fbbf24" fontSize="9" fontWeight="bold">
+                  {Math.round(Number(d.coverage_per_dollar) || 0).toLocaleString()}%/$
                 </text>
               </g>
             );
@@ -3553,7 +3810,7 @@ const FailureAnalysisChart = ({ data }: { data: any[] }) => {
   const paddingTop = 25;
   const svgWidth = 600;
 
-  const maxVal = Math.max(...data.map(d => d.count || 1), 10);
+  const maxVal = Math.max(...data.map(d => Number(d.count) || 1).filter(n => !isNaN(n)), 10);
 
   return (
     <div className="flex flex-col gap-4">
@@ -3584,8 +3841,8 @@ const FailureAnalysisChart = ({ data }: { data: any[] }) => {
 
             return (
               <g key={d.model + '_' + d.failure_type}>
-                <rect x={x} y={y} width={barWidth} height={h} fill="url(#failGrad)" rx="3" className="transition-all duration-300 hover:opacity-85" />
-                <text x={x + barWidth / 2} y={y - 4} fill="#f43f5e" fontSize="9" fontWeight="bold" textAnchor="middle">
+                <rect x={x} y={y || 0} width={barWidth} height={h || 0} fill="url(#failGrad)" rx="3" className="transition-all duration-300 hover:opacity-85" />
+                <text x={x + barWidth / 2} y={(y || 0) - 4} fill="#f43f5e" fontSize="9" fontWeight="bold" textAnchor="middle">
                   {d.count}
                 </text>
                 <text x={x + barWidth / 2} y={height + paddingTop + 18} fill="var(--text-secondary)" fontSize="9" fontWeight="700" textAnchor="middle">
@@ -3643,21 +3900,21 @@ const SelfHealingChart = ({ data }: { data: any[] }) => {
 
           {data.map((d, i) => {
             const groupX = paddingLeft + i * (barWidth * 2 + groupSpacing) + 30;
-            const initRate = d.initial_compile_rate || 0;
-            const finalRate = d.final_compile_rate || 0;
+            const initRate = Number(d.initial_compile_rate) || 0;
+            const finalRate = Number(d.final_compile_rate) || 0;
 
-            const yInit = height - (initRate / 100) * height + paddingTop;
-            const yFinal = height - (finalRate / 100) * height + paddingTop;
+            const yInit = height - (initRate / 100) * height + paddingTop || paddingTop;
+            const yFinal = height - (finalRate / 100) * height + paddingTop || paddingTop;
 
             return (
               <g key={d.model}>
                 {/* Initial Compile Bar */}
-                <rect x={groupX} y={yInit} width={barWidth} height={(initRate / 100) * height} fill="url(#healInitGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
-                <text x={groupX + barWidth / 2} y={yInit - 4} fill="#f43f5e" fontSize="9" fontWeight="bold" textAnchor="middle">{initRate}%</text>
+                <rect x={groupX} y={yInit || 0} width={barWidth} height={(initRate / 100) * height || 0} fill="url(#healInitGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
+                <text x={groupX + barWidth / 2} y={(yInit || 0) - 4} fill="#f43f5e" fontSize="9" fontWeight="bold" textAnchor="middle">{initRate}%</text>
 
                 {/* Final Compile Bar */}
-                <rect x={groupX + barWidth} y={yFinal} width={barWidth} height={(finalRate / 100) * height} fill="url(#healFinalGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
-                <text x={groupX + barWidth + barWidth / 2} y={yFinal - 4} fill="#34d399" fontSize="9" fontWeight="bold" textAnchor="middle">{finalRate}%</text>
+                <rect x={groupX + barWidth} y={yFinal || 0} width={barWidth} height={(finalRate / 100) * height || 0} fill="url(#healFinalGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
+                <text x={groupX + barWidth + barWidth / 2} y={(yFinal || 0) - 4} fill="#34d399" fontSize="9" fontWeight="bold" textAnchor="middle">{finalRate}%</text>
 
                 {/* Axis Label */}
                 <text x={groupX + barWidth} y={height + paddingTop + 20} fill="var(--text-secondary)" fontSize="9" fontWeight="700" textAnchor="middle">
@@ -3681,7 +3938,7 @@ const LatencyChart = ({ data }: { data: any[] }) => {
   const paddingTop = 25;
   const svgWidth = 600;
 
-  const maxVal = Math.max(...data.map(d => d.max_time || 1), 60);
+  const maxVal = Math.max(...data.map(d => Number(d.max_time) || 1).filter(n => !isNaN(n)), 60);
 
   return (
     <div className="flex flex-col gap-4">
@@ -3728,16 +3985,16 @@ const LatencyChart = ({ data }: { data: any[] }) => {
             return (
               <g key={d.model}>
                 {/* Min Bar */}
-                <rect x={groupX} y={yMin} width={barWidth} height={(d.min_time / maxVal) * height} fill="url(#latMinGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
-                <text x={groupX + barWidth / 2} y={yMin - 4} fill="#7dd3fc" fontSize="8" fontWeight="bold" textAnchor="middle">{d.min_time}s</text>
+                <rect x={groupX} y={yMin || 0} width={barWidth} height={((Number(d.min_time) || 0) / maxVal) * height || 0} fill="url(#latMinGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
+                <text x={groupX + barWidth / 2} y={(yMin || 0) - 4} fill="#7dd3fc" fontSize="8" fontWeight="bold" textAnchor="middle">{Number(d.min_time) || 0}s</text>
 
                 {/* Avg Bar */}
-                <rect x={groupX + barWidth} y={yAvg} width={barWidth} height={(d.avg_time / maxVal) * height} fill="url(#latAvgGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
-                <text x={groupX + barWidth + barWidth / 2} y={yAvg - 4} fill="#a5b4fc" fontSize="8" fontWeight="bold" textAnchor="middle">{d.avg_time}s</text>
+                <rect x={groupX + barWidth} y={yAvg || 0} width={barWidth} height={((Number(d.avg_time) || 0) / maxVal) * height || 0} fill="url(#latAvgGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
+                <text x={groupX + barWidth + barWidth / 2} y={(yAvg || 0) - 4} fill="#a5b4fc" fontSize="8" fontWeight="bold" textAnchor="middle">{Number(d.avg_time) || 0}s</text>
 
                 {/* Max Bar */}
-                <rect x={groupX + barWidth * 2} y={yMax} width={barWidth} height={(d.max_time / maxVal) * height} fill="url(#latMaxGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
-                <text x={groupX + barWidth * 2 + barWidth / 2} y={yMax - 4} fill="#d8b4fe" fontSize="8" fontWeight="bold" textAnchor="middle">{d.max_time}s</text>
+                <rect x={groupX + barWidth * 2} y={yMax || 0} width={barWidth} height={((Number(d.max_time) || 0) / maxVal) * height || 0} fill="url(#latMaxGrad)" rx="2" className="transition-all duration-300 hover:opacity-85" />
+                <text x={groupX + barWidth * 2 + barWidth / 2} y={(yMax || 0) - 4} fill="#d8b4fe" fontSize="8" fontWeight="bold" textAnchor="middle">{Number(d.max_time) || 0}s</text>
 
                 {/* Axis Label */}
                 <text x={groupX + barWidth * 1.5} y={height + paddingTop + 20} fill="var(--text-secondary)" fontSize="9" fontWeight="700" textAnchor="middle">
