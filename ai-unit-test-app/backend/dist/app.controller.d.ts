@@ -5,6 +5,8 @@ declare class GenerateDto {
     source?: string;
     filePath?: string;
     runMutation?: boolean;
+    repoDir?: string;
+    methodName?: string;
 }
 export declare class AppController {
     getModels(): {
@@ -37,6 +39,19 @@ export declare class AppController {
         filePath: string;
         testCode: string;
         githubPat?: string;
+        metrics?: any;
+        methodName?: string;
     }): Promise<unknown>;
+    cicdWebhook(body: {
+        repoUrl: string;
+        prNumber: string;
+        branch: string;
+        workflow?: string;
+    }): Promise<{
+        status: string;
+        repoUrl: string;
+        workflow: string;
+    }>;
+    private runAutomatedCicdPipeline;
 }
 export {};

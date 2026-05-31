@@ -1,6 +1,4 @@
 using BenchmarkSourceProject;
-using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 using Xunit;
 
 namespace BenchmarkTestProject.Tests
@@ -8,18 +6,18 @@ namespace BenchmarkTestProject.Tests
     public class SourceServiceTests
     {
         [Fact]
-        public void GetAll_ReturnsOkResult_WithOrderedUserProfiles()
+        public void Divide_ValidInput_ReturnsCorrectQuotient()
         {
             var service = new SourceService();
+            int result = service.Divide(10, 2);
+            Assert.Equal(5, result);
+        }
 
-            var result = service.GetAll();
-
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            var data = Assert.IsAssignableFrom<List<object>>(okResult.Value);
-            for (int i = 1; i < data.Count; i++)
-            {
-                Assert.True(((dynamic)data[i - 1]).Id >= ((dynamic)data[i]).Id);
-            }
+        [Fact]
+        public void Divide_DenominatorZero_ThrowsDivideByZeroException()
+        {
+            var service = new SourceService();
+            Assert.Throws<System.DivideByZeroException>(() => service.Divide(10, 0));
         }
     }
 }

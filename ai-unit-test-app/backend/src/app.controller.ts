@@ -610,72 +610,131 @@ export class AppController {
       });
     });
 
-    // 2. Scan for C# files (simplified logic: pick the first one that looks like business logic)
-    const csFiles = scanCsFiles(tempDirPath).filter(f => !path.relative(tempDirPath, f).toLowerCase().includes('test'));
-    if (csFiles.length === 0) {
-      console.log(`[CI/CD] No C# files found to test in ${repoUrl}`);
+    // 2. Scan for C# files and determine files that need testing
+    const allCsFiles = scanCsFiles(tempDirPath);
+    const testFiles = allCsFiles.filter(f => {
+      const rel = path.relative(tempDirPath, f).toLowerCase();
+      return rel.includes('test') || rel.endsWith('tests.cs');
+    });
+    
+    const sourceFiles = allCsFiles.filter(f => !testFiles.includes(f));
+    const filesToTest: string[] = [];
+    
+    for (const sourceFile of sourceFiles) {
+      const baseName = path.basename(sourceFile, '.cs');
+      // Check if there is any matching test file
+      const hasTest = testFiles.some(tf => path.basename(tf, '.cs').toLowerCase().includes(baseName.toLowerCase() + 'test'));
+      if (!hasTest) {
+        filesToTest.push(sourceFile);
+      }
+    }
+
+    if (filesToTest.length === 0) {
+      console.log(`[CI/CD] All ${sourceFiles.length} C# files already have tests. Nothing to do for ${repoUrl}`);
+      try { fs.rmSync(tempDirPath, { recursive: true, force: true }); } catch (e) {}
       return;
     }
 
-    const targetFile = csFiles[0]; 
-    const relativePath = path.relative(tempDirPath, targetFile);
-    const sourceCode = fs.readFileSync(targetFile, 'utf8');
+    console.log(`[CI/CD] Found ${filesToTest.length} files without tests. Starting generation queue...`);
 
-    // 3. Run AI Generation natively
+    // 3. Run AI Generation sequentially for all missing tests
     const pythonExe = path.join(workspaceRoot, 'ai-unit-test-benchmark', '.venv', 'Scripts', 'python.exe');
     const apiRunnerScript = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'api_runner.py');
     const model = 'llama'; 
+    let generatedCount = 0;
 
-    const tempFileName = `temp_cicd_${Date.now()}.cs`;
-    const tempFilePath = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', tempFileName);
-    fs.writeFileSync(tempFilePath, sourceCode, 'utf8');
+    for (const targetFile of filesToTest) {
+      const relativePath = path.relative(tempDirPath, targetFile);
+      const sourceCode = fs.readFileSync(targetFile, 'utf8');
+      const tempFileName = `temp_cicd_${Date.now()}.cs`;
+      const tempFilePath = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', tempFileName);
+      fs.writeFileSync(tempFilePath, sourceCode, 'utf8');
 
-    const command = `"${pythonExe}" "${apiRunnerScript}" --model ${model} --workflow ${workflow} --file "${tempFilePath}" --github-repo-path "${tempDirPath}" --github-file-path "${relativePath}"`;
-    
-    console.log(`[CI/CD] Running test generation: ${command}`);
-    
-    await new Promise((resolve, reject) => {
-      exec(command, { cwd: path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner') }, (error, stdout, stderr) => {
-        try { fs.unlinkSync(tempFilePath); } catch (e) {}
-        
-        if (error) {
-          console.error(`[CI/CD] Generation failed:`, stderr);
-          return reject(error);
-        }
-        
+      const command = `"${pythonExe}" "${apiRunnerScript}" --model ${model} --workflow ${workflow} --file "${tempFilePath}" --github-repo-path "${tempDirPath}" --github-file-path "${relativePath}"`;
+      console.log(`[CI/CD] Generating tests for ${relativePath}...`);
+      
+      try {
+        await new Promise((resolve) => {
+          exec(command, { cwd: path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner') }, (error, stdout, stderr) => {
+            try { fs.unlinkSync(tempFilePath); } catch (e) {}
+            if (error) {
+              console.error(`[CI/CD] Generation failed for ${relativePath}:`, stderr);
+              return resolve(false); // don't reject, skip to next file
+            }
+            generatedCount++;
+            console.log(`[CI/CD] Successfully generated tests for ${relativePath}`);
+            
+            // Save CI/CD log optionally
+            try {
+              const parsedResult = JSON.parse(extractJson(stdout));
+              const cicdDir = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'results', 'ci_cd');
+              if (!fs.existsSync(cicdDir)) fs.mkdirSync(cicdDir, { recursive: true });
+              const logFile = path.join(cicdDir, `cicd_run_${Date.now()}.json`);
+              fs.writeFileSync(logFile, JSON.stringify({
+                timestamp: new Date().toISOString(),
+                file_path: relativePath,
+                success: parsedResult.success || false,
+                line_coverage: parsedResult.line_coverage || 0,
+                evaluator_score: parsedResult.evaluator_score || 0,
+                cost: parsedResult.cost || 0,
+                latency: parsedResult.latency || 0,
+                model: model || 'llama',
+                workflow: workflow || 'ultimate_hybrid',
+                mutation_score: parsedResult.mutation_score,
+                total_mutants: parsedResult.total_mutants,
+                killed_mutants: parsedResult.killed_mutants,
+                survived_mutants: parsedResult.survived_mutants,
+                repoUrl, 
+                prNumber, 
+                branch, 
+                targetFile: relativePath, 
+                result: parsedResult
+              }, null, 2));
+            } catch (e) {}
+            
+            resolve(true);
+          });
+        });
+      } catch (err) {
+        console.error(`[CI/CD] Pipeline error on ${relativePath}:`, err);
+      }
+    }
+
+    // 4. Commit and push back to GitHub if tests were generated
+    if (generatedCount > 0) {
+      console.log(`[CI/CD] Generated ${generatedCount} test files. Committing and pushing to GitHub...`);
+      const githubToken = getGithubToken();
+      if (githubToken) {
         try {
-          const parsedResult = JSON.parse(extractJson(stdout));
+          const repoUrlObj = new URL(repoUrl);
+          const owner = repoUrlObj.pathname.split('/')[1];
+          const repo = repoUrlObj.pathname.split('/')[2].replace('.git', '');
+          const authUrl = `https://${githubToken}@github.com/${owner}/${repo}.git`;
           
-          // Save CI/CD log
-          const cicdDir = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'results', 'ci_cd');
-          if (!fs.existsSync(cicdDir)) fs.mkdirSync(cicdDir, { recursive: true });
+          execSync(`git remote set-url origin "${authUrl}"`, { cwd: tempDirPath, stdio: 'pipe' });
+          execSync(`git add .`, { cwd: tempDirPath, stdio: 'pipe' });
           
-          const logFile = path.join(cicdDir, `cicd_run_${Date.now()}.json`);
-          fs.writeFileSync(logFile, JSON.stringify({
-            timestamp: new Date().toISOString(),
-            repoUrl,
-            prNumber,
-            branch,
-            targetFile: relativePath,
-            result: parsedResult
-          }, null, 2));
-          
-          console.log(`[CI/CD] Successfully generated tests for ${relativePath}. Result saved.`);
-          
-          // Cleanup cloned repo
-          try {
-            fs.rmSync(tempDirPath, { recursive: true, force: true });
-            console.log(`[CI/CD] Cleaned up temporary repository: ${tempDirPath}`);
-          } catch (cleanupErr) {
-            console.error(`[CI/CD] Failed to clean up repository: ${tempDirPath}`, cleanupErr);
+          const status = execSync(`git status --porcelain`, { cwd: tempDirPath }).toString().trim();
+          if (status) {
+            execSync(`git -c user.name="AI Unit Test Agent" -c user.email="agent@ai-unit-test.local" commit -m "test: auto-generate missing unit tests via CI/CD"`, { cwd: tempDirPath, stdio: 'pipe' });
+            execSync(`git push origin "${branch}"`, { cwd: tempDirPath, stdio: 'pipe' });
+            console.log(`[CI/CD] Successfully pushed generated tests to branch ${branch}!`);
           }
-          
-          resolve(parsedResult);
-        } catch (e) {
-          reject(e);
+        } catch (gitErr: any) {
+          console.error(`[CI/CD] Failed to push generated tests to GitHub:`, gitErr.stderr?.toString() || gitErr.message);
         }
-      });
-    });
+      } else {
+        console.log(`[CI/CD] Skipping push to GitHub because GITHUB_PAT is not configured.`);
+      }
+    }
+
+    // 5. Cleanup cloned repo
+    try {
+      fs.rmSync(tempDirPath, { recursive: true, force: true });
+      console.log(`[CI/CD] Cleaned up temporary repository: ${tempDirPath}`);
+    } catch (cleanupErr) {
+      console.error(`[CI/CD] Failed to clean up repository: ${tempDirPath}`, cleanupErr);
+    }
   }
 }
 

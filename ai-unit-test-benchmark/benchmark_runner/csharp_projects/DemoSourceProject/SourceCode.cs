@@ -2,14 +2,13 @@
             namespace BenchmarkSourceProject;
             public class SourceService
             {
-            [HttpGet]
-    public IActionResult GetAll()
+            public int Divide(int numerator, int denominator)
+{
+    if (denominator == 0)
     {
-        var data = _context.UserProfiles
-            .OrderByDescending(x => x.Id)
-            .ToList();
-
-        return Ok(data);
+        throw new System.DivideByZeroException("Denominator cannot be zero.");
     }
+    return numerator / denominator;
+}
             }
             

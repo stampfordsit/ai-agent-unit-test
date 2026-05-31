@@ -13,7 +13,7 @@ The system is designed as a modular workspace consisting of the following core p
    - Contains the **Playground** workspace for manual code entry.
    - Provides **GitHub Ingest** to clone remote repositories, parse C# classes/methods using Roslyn, select methods, and create Pull Requests. Includes an **Automatic Repository Cleanup** mechanism to prevent disk space exhaustion from temporary clones.
    - **Native Execution & CI/CD Hooks**: Supports cloning full repositories to run generated tests natively in the target environment and provides a Webhook (`POST /api/cicd/webhook`) for automated GitHub Action CI/CD pipelines.
-   - Features the **Analytical Dashboard** presenting comprehensive charts, metrics (success rate, code coverage, self-healing loops), and logs.
+   - Features the **Analytical Dashboard** presenting comprehensive charts, metrics (success rate, code coverage, self-healing loops), real-time auto-reloading logs, and an integrated **Code Viewer** in the CI/CD popup to inspect AI-generated test code directly.
 2. **Backend API Gateway ([backend](file:///g:/AI%20Agent%20in%20C%23/ai-unit-test-app/backend))**:
    - Built with **NestJS** (TypeScript) and documented with **Swagger/OpenAPI**.
    - Handles file management, clones repositories using Git sparse-checkouts, runs the Roslyn Parser CLI, and opens GitHub PRs.
@@ -118,6 +118,64 @@ The platform implements six main workflows to generate, evaluate, and optimize u
 See the **System Workflow** page inside the dashboard (**[http://localhost:3000/?view=workflow](http://localhost:3000/?view=workflow)**) for detailed sequence diagrams of these processes.
 
 ---
+
+## 🤖 Automated GitHub Actions CI/CD Integration
+
+The backend provides a fully autonomous Webhook endpoint (`/api/cicd/webhook`) designed to integrate directly with GitHub Actions. 
+
+**How it works (Zero-Touch Generation):**
+1. **Smart File Scanning:** When a Pull Request is opened, GitHub Actions fires a webhook to the backend. The backend clones the PR branch and scans all C# source files in the repository.
+2. **Missing Test Detection:** It intelligently matches source files against existing test files. If a file (e.g., `PaymentService.cs`) lacks a corresponding test file (e.g., `PaymentServiceTests.cs`), it gets queued for generation.
+3. **Sequential Execution:** The system invokes the Python AI Pipeline (`api_runner.py`) to generate robust unit tests for every missing file in the queue sequentially.
+4. **Auto-Commit & Push:** Once generation completes, the system automatically commits the newly generated test files under the identity `AI Unit Test Agent` and pushes them directly back to the GitHub Pull Request branch.
+
+### 🎬 How to Demo the CI/CD Pipeline
+
+To test the CI/CD integration locally using a real GitHub repository:
+
+1. **Expose Localhost via Ngrok (Static Domain Recommended):**
+   Start your frontend and backend, then open a new terminal and run:
+   ```bash
+   ngrok http --domain=your-static-domain.ngrok-free.dev 3005
+   ```
+   *Tip: You can claim a free static domain in your Ngrok dashboard under Cloud Edge > Domains so your URL never changes on restart.*
+
+2. **Configure GitHub Repository:**
+   In your target GitHub repository, create a workflow file at `.github/workflows/ai-unit-test.yml`:
+   ```yaml
+   name: AI Unit Test Generator
+   on:
+     pull_request:
+       paths:
+         - '**.cs'
+   jobs:
+     generate-tests:
+       runs-on: ubuntu-latest
+       steps:
+         - name: Trigger AI Test Generation Webhook
+           run: |
+             curl -X POST https://xxxx.ngrok-free.app/api/cicd/webhook \
+               -H "Content-Type: application/json" \
+               -d '{
+                 "repoUrl": "${{ github.server_url }}/${{ github.repository }}",
+                 "prNumber": "${{ github.event.pull_request.number }}",
+                 "branch": "${{ github.head_ref }}",
+                 "workflow": "ultimate_hybrid",
+                 "model": "gptmini"
+               }'
+   ```
+   *(Ensure you replace the URL with your Ngrok static address. You can change `"model"` to `gpt4o`, `deepseek`, or `llama` as needed. Remember to commit this file to your repository).*
+
+3. **Trigger the Magic:**
+   - Create a new branch (e.g., `feature/new-logic`).
+   - Add a new C# logic file without writing any unit tests.
+   - Open a Pull Request on GitHub.
+   - Watch your local backend terminal! It will automatically detect the missing tests, invoke the AI, and push the newly generated `Tests.cs` file directly into your GitHub Pull Request.
+
+4. **Review & Merge (Gatekeeper Workflow):**
+   - **Do not merge the PR immediately!** Wait for the GitHub Actions (and the Ngrok webhook) to finish running.
+   - Once the AI pushes the test code, you will see the new commits automatically appear in your PR.
+   - Review the generated tests. Once all CI/CD checks pass, you can safely merge the PR into the `main` branch, guaranteeing that no code is ever merged without unit test coverage.
 
 ## 🔐 Credentials & Environment Setup
 

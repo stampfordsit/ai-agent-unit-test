@@ -171,6 +171,7 @@ interface CicdLogRecord {
   total_mutants?: number | null;
   killed_mutants?: number | null;
   survived_mutants?: number | null;
+  result?: any;
 }
 
 export default function Dashboard() {
@@ -251,7 +252,7 @@ export default function Dashboard() {
     };
 
     fetchData();
-  }, []);
+  }, [dashboardTab]);
 
   // Load static summaries dynamically when version or workflow changes
   useEffect(() => {
@@ -3167,7 +3168,7 @@ export default function Dashboard() {
           {/* DETAIL VIEW MODAL FOR CI/CD COMMIT HOOK RUNS */}
           {selectedCicdLog && (
             <div className="modal-backdrop" onClick={() => setSelectedCicdLog(null)}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '1000px', width: '90%' }}>
                 <div className="modal-header">
                   <div className="flex flex-col">
                     <span className="modal-title">CI/CD Commit Gate Check</span>
@@ -3230,6 +3231,19 @@ export default function Dashboard() {
                       <span className="font-bold text-amber-400">${selectedCicdLog.cost.toFixed(5)}</span>
                     </div>
                   </div>
+
+                  {selectedCicdLog.result?.generated_test && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.75rem', background: 'rgba(99,102,241,0.08)', borderRadius: '6px', border: '1px solid rgba(99,102,241,0.15)' }}>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.08em' }}>OUTPUT</span>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#a5b4fc' }}>AI-Generated xUnit Test Code</span>
+                        <span style={{ marginLeft: 'auto', fontSize: '0.65rem', color: '#6366f1', background: 'rgba(99,102,241,0.1)', padding: '0.1rem 0.4rem', borderRadius: '4px', border: '1px solid rgba(99,102,241,0.2)' }}>C#</span>
+                      </div>
+                      <div className="code-viewer" style={{ flex: 1, maxHeight: '350px', borderColor: 'rgba(99,102,241,0.15)', overflowY: 'auto' }}>
+                        <code>{selectedCicdLog.result.generated_test}</code>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

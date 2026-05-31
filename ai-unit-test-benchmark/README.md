@@ -188,13 +188,20 @@ The **GitHub Ingest** panel allows developers to automatically create Pull Reque
 
 ---
 
-## 🚀 CI/CD Webhook & Native Execution
+## 🔄 Automated GitHub Actions CI/CD Integration
 
 The system supports automated integration directly into developer CI/CD pipelines via GitHub Actions.
 
-1. **Native Execution**: When a GitHub repository is cloned or passed to the webhook, the AI engine dynamically parses the project structure, resolves `.csproj` dependencies, and scaffolds an `xUnit` test project if one doesn't exist. Tests are executed natively against the actual project source instead of a generic sandbox.
-2. **Automated Webhooks**: A dedicated `POST /api/cicd/webhook` endpoint on the backend listens for CI/CD payloads (repository URL, PR number, branch) and automatically runs the unit test generation workflow (default: `ultimate_hybrid`).
-3. **GitHub Action Template**: You can easily embed the AI Unit Test generator into your own repositories using the provided `ai-unit-test.yml` template located in the benchmark directory.
+1. **Smart File Scanning & Missing Test Detection**: A dedicated `POST /api/cicd/webhook` endpoint on the backend listens for CI/CD payloads (repository URL, PR number, branch). It automatically clones the repository and scans all C# logic files. It intelligently identifies files that do not have existing unit tests (e.g. `Tests.cs`) and queues them for generation.
+2. **Sequential Native Execution**: The AI engine dynamically parses the project structure, resolves `.csproj` dependencies, and generates robust unit tests for each missing file natively against the actual project source.
+3. **Auto-Commit & Push**: Once generation is complete, the backend automatically commits the newly generated test files under the identity `AI Unit Test Agent` and pushes them directly back to the GitHub Pull Request branch.
+4. **GitHub Action Template**: You can easily embed the AI Unit Test generator into your own repositories using the provided `ai-unit-test.yml` template located in the benchmark directory.
+
+### 🎬 How to Demo the CI/CD Pipeline
+1. Run `ngrok http 3005` to expose your local backend.
+2. Add `.github/workflows/ai-unit-test.yml` to your target GitHub repository, updating the URL to your ngrok address.
+3. Open a Pull Request in your repository with new C# files that lack tests. 
+4. Watch the backend terminal automatically detect, generate, and push the tests back to your GitHub PR!
 
 ---
 

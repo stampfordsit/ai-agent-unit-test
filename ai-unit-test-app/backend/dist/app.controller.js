@@ -59,6 +59,8 @@ class GenerateDto {
     source;
     filePath;
     runMutation;
+    repoDir;
+    methodName;
 }
 __decorate([
     (0, swagger_1.ApiProperty)({
@@ -93,12 +95,19 @@ __decorate([
     (0, swagger_1.ApiProperty)({ required: false, description: 'Whether to run Mutation Testing or not' }),
     __metadata("design:type", Boolean)
 ], GenerateDto.prototype, "runMutation", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false, description: 'The directory name of the cloned repo in github_repos' }),
+    __metadata("design:type", String)
+], GenerateDto.prototype, "repoDir", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false }),
+    __metadata("design:type", String)
+], GenerateDto.prototype, "methodName", void 0);
 let AppController = class AppController {
     getModels() {
         return [
             { id: 'gptmini', name: 'GPT-4o Mini (Azure)' },
             { id: 'llama', name: 'Llama 3.3 70B (Azure)' },
-            { id: 'deepseek', name: 'DeepSeek-R1 (Azure)' },
             { id: 'deepseekv3', name: 'DeepSeek-V3 (Azure)' }
         ];
     }
@@ -122,6 +131,13 @@ let AppController = class AppController {
             let command = `"${pythonExe}" "${apiRunnerScript}" --model ${model} --workflow ${workflow} --file "${tempFilePath}"`;
             if (runMutation === false || runMutation === 'false' || String(runMutation) === 'false') {
                 command += ' --no-mutation';
+            }
+            if (body.source === 'github' && body.repoDir && body.filePath) {
+                const repoAbsPath = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'csharp_projects', 'github_repos', body.repoDir);
+                command += ` --github-repo-path "${repoAbsPath}" --github-file-path "${body.filePath}"`;
+            }
+            if (body.methodName) {
+                command += ` --method-name "${body.methodName}"`;
             }
             console.log(`[Backend] Executing AI sandbox runner: ${command}`);
             (0, child_process_1.exec)(command, { cwd: benchmarkRunnerDir }, (error, stdout, stderr) => {
@@ -366,17 +382,30 @@ let AppController = class AppController {
         if (!repoUrl) {
             throw new common_1.HttpException('Missing repoUrl parameter', common_1.HttpStatus.BAD_REQUEST);
         }
-        const tempRoot = path.join(workspaceRoot, 'ai-unit-test-app', 'backend', 'temp');
+        const tempRoot = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'csharp_projects', 'github_repos');
         const tempDirName = `temp_repo_${Date.now()}`;
         const tempDirPath = path.join(tempRoot, tempDirName);
         try {
             fs.mkdirSync(tempRoot, { recursive: true });
+            const existingDirs = fs.readdirSync(tempRoot);
+            for (const dir of existingDirs) {
+                if (dir.startsWith('temp_repo_')) {
+                    const dirPath = path.join(tempRoot, dir);
+                    try {
+                        fs.rmSync(dirPath, { recursive: true, force: true });
+                        console.log(`[GitHub Ingest] Cleaned up old repo folder: ${dir}`);
+                    }
+                    catch (e) {
+                        console.error(`[GitHub Ingest] Failed to clean up ${dirPath}`, e);
+                    }
+                }
+            }
         }
         catch (err) {
             throw new common_1.HttpException(`Failed to create temp root: ${err.message}`, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return new Promise((resolve, reject) => {
-            const cloneCommand = `git clone --depth 1 --quiet --filter=blob:none --no-checkout "${repoUrl}" "${tempDirPath}"`;
+            const cloneCommand = `git clone --depth 1 --quiet "${repoUrl}" "${tempDirPath}"`;
             (0, child_process_1.exec)(cloneCommand, (cloneError, _, cloneStderr) => {
                 if (cloneError) {
                     console.error('Clone error:', cloneError);
@@ -384,43 +413,39 @@ let AppController = class AppController {
                     reject(new common_1.HttpException(`Failed to clone repository: ${cleanedError}`, common_1.HttpStatus.INTERNAL_SERVER_ERROR));
                     return;
                 }
-                (0, child_process_1.exec)(`git sparse-checkout set --no-cone "*.cs"`, { cwd: tempDirPath }, (sparseError) => {
-                    if (sparseError) {
-                        console.warn('Sparse-checkout config warning:', sparseError.message);
-                    }
-                    (0, child_process_1.exec)(`git checkout`, { cwd: tempDirPath }, async (checkoutError, __, checkoutStderr) => {
-                        if (checkoutError) {
-                            console.warn('Checkout warning (non-fatal):', cleanGitError(checkoutStderr || checkoutError.message));
-                        }
-                        const parserDll = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'csharp_projects', 'RoslynParserCli', 'bin', 'Debug', 'net8.0', 'RoslynParserCli.dll');
-                        const csFiles = scanCsFiles(tempDirPath);
-                        const parsedFiles = [];
-                        for (const file of csFiles) {
-                            const methods = await parseCsFile(parserDll, file);
-                            if (methods && methods.length > 0) {
-                                const relativePath = path.relative(tempDirPath, file);
-                                parsedFiles.push({
-                                    filePath: relativePath,
-                                    className: methods[0].ClassName,
-                                    methods: methods.map(m => ({
-                                        methodName: m.MethodName,
-                                        signature: `${m.Modifiers.join(' ')} ${m.ReturnType} ${m.MethodName}(${m.Parameters.map((p) => `${p.Type} ${p.Name}`).join(', ')})`,
-                                        body: m.Body
-                                    }))
-                                });
-                            }
-                        }
-                        resolve({
-                            tempDir: tempDirName,
-                            files: parsedFiles
+                const parserDll = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'csharp_projects', 'RoslynParserCli', 'bin', 'Debug', 'net8.0', 'RoslynParserCli.dll');
+                const csFiles = scanCsFiles(tempDirPath).filter(f => !path.relative(tempDirPath, f).toLowerCase().includes('test'));
+                const parsedFiles = [];
+                const parsePromises = csFiles.map(async (file) => {
+                    const content = fs.readFileSync(file, 'utf8');
+                    const nsMatch = content.match(/namespace\s+([\w\.]+)/);
+                    const namespaceName = nsMatch ? nsMatch[1] : 'BenchmarkSourceProject';
+                    const methods = await parseCsFile(parserDll, file);
+                    if (methods && methods.length > 0) {
+                        const relativePath = path.relative(tempDirPath, file);
+                        parsedFiles.push({
+                            filePath: relativePath,
+                            className: methods[0].ClassName,
+                            namespaceName: namespaceName,
+                            methods: methods.map(m => ({
+                                methodName: m.MethodName,
+                                signature: `${m.Modifiers.join(' ')} ${m.ReturnType} ${m.MethodName}(${m.Parameters.map((p) => `${p.Type} ${p.Name}`).join(', ')})`,
+                                body: m.Body
+                            }))
                         });
+                    }
+                });
+                Promise.all(parsePromises).then(() => {
+                    resolve({
+                        tempDir: tempDirName,
+                        files: parsedFiles
                     });
                 });
             });
         });
     }
     async createGithubPr(body) {
-        const { repoUrl, tempDir, filePath, testCode } = body;
+        const { repoUrl, tempDir, filePath, testCode, metrics, methodName } = body;
         if (!repoUrl || !tempDir || !filePath || !testCode) {
             throw new common_1.HttpException('Missing required parameters', common_1.HttpStatus.BAD_REQUEST);
         }
@@ -428,15 +453,35 @@ let AppController = class AppController {
         if (!githubToken) {
             throw new common_1.HttpException('GitHub Personal Access Token not provided. Enter it in the GitHub Ingestion UI or add GITHUB_PAT to benchmark_runner/.env', common_1.HttpStatus.BAD_REQUEST);
         }
-        const tempDirPath = path.join(workspaceRoot, 'ai-unit-test-app', 'backend', 'temp', tempDir);
+        const tempDirPath = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'csharp_projects', 'github_repos', tempDir);
         if (!fs.existsSync(tempDirPath)) {
             throw new common_1.HttpException('Ingested repository session expired or directory not found', common_1.HttpStatus.NOT_FOUND);
         }
         const sourceDir = path.dirname(filePath);
         const sourceBase = path.basename(filePath, '.cs');
-        const testFileName = `${sourceBase}Tests.cs`;
-        const testFileRelativePath = path.join(sourceDir, testFileName);
-        const testFileAbsolutePath = path.join(tempDirPath, testFileRelativePath);
+        const testFileName = methodName ? `${sourceBase}_${methodName}Tests.cs` : `${sourceBase}Tests.cs`;
+        const findTestFile = (dir, filename) => {
+            const files = fs.readdirSync(dir);
+            for (const file of files) {
+                const fullPath = path.join(dir, file);
+                if (file === 'bin' || file === 'obj' || file === 'StrykerOutput')
+                    continue;
+                if (fs.statSync(fullPath).isDirectory()) {
+                    const res = findTestFile(fullPath, filename);
+                    if (res)
+                        return res;
+                }
+                else if (file === filename) {
+                    return fullPath;
+                }
+            }
+            return null;
+        };
+        let testFileAbsolutePath = findTestFile(tempDirPath, testFileName);
+        if (!testFileAbsolutePath) {
+            const testFileRelativePath = path.join(sourceDir, testFileName);
+            testFileAbsolutePath = path.join(tempDirPath, testFileRelativePath);
+        }
         try {
             fs.mkdirSync(path.dirname(testFileAbsolutePath), { recursive: true });
             fs.writeFileSync(testFileAbsolutePath, testCode, 'utf8');
@@ -453,37 +498,175 @@ let AppController = class AppController {
         const branchName = `ai-unit-tests-${Date.now()}`;
         return new Promise((resolve, reject) => {
             const authUrl = `https://${githubToken}@github.com/${owner}/${repo}.git`;
-            const gitCommands = [
-                `git sparse-checkout disable`,
-                `git remote set-url origin "${authUrl}"`,
-                `git checkout -b "${branchName}"`,
-                `git add "${testFileRelativePath}"`,
-                `git -c user.name="AI Unit Test Agent" -c user.email="agent@ai-unit-test.local" commit -m "Add AI-generated unit tests for ${sourceBase}"`,
-                `git push origin "${branchName}"`
-            ];
-            const execSequence = (index) => {
-                if (index >= gitCommands.length) {
-                    openPullRequest(githubToken, owner, repo, branchName, sourceBase)
-                        .then((prData) => resolve(prData))
-                        .catch((err) => reject(new common_1.HttpException(`Failed to create Pull Request: ${err.message}`, common_1.HttpStatus.INTERNAL_SERVER_ERROR)));
+            const gitignorePath = path.join(tempDirPath, '.gitignore');
+            const gitignoreContent = "\n[Bb]in/\n[Oo]bj/\nStrykerOutput/\ncoverage.cobertura.xml\n";
+            fs.appendFileSync(gitignorePath, gitignoreContent);
+            try {
+                (0, child_process_1.execSync)(`git remote set-url origin "${authUrl}"`, { cwd: tempDirPath, stdio: 'pipe' });
+                (0, child_process_1.execSync)(`git checkout -b "${branchName}"`, { cwd: tempDirPath, stdio: 'pipe' });
+                (0, child_process_1.execSync)(`git add .`, { cwd: tempDirPath, stdio: 'pipe' });
+                const status = (0, child_process_1.execSync)(`git status --porcelain`, { cwd: tempDirPath }).toString().trim();
+                if (!status) {
+                    return reject(new common_1.HttpException('No new changes to commit. The generated tests are identical to the repository.', common_1.HttpStatus.BAD_REQUEST));
+                }
+                (0, child_process_1.execSync)(`git -c user.name="AI Unit Test Agent" -c user.email="agent@ai-unit-test.local" commit -m "Add AI-generated unit tests for ${sourceBase}"`, { cwd: tempDirPath, stdio: 'pipe' });
+                (0, child_process_1.execSync)(`git push origin "${branchName}"`, { cwd: tempDirPath, stdio: 'pipe' });
+                openPullRequest(githubToken, owner, repo, branchName, sourceBase, metrics)
+                    .then((prData) => resolve(prData))
+                    .catch((err) => reject(new common_1.HttpException(`Failed to create Pull Request: ${err.message}`, common_1.HttpStatus.INTERNAL_SERVER_ERROR)));
+            }
+            catch (err) {
+                console.error(`Git command failed`, err.stderr?.toString() || err.message);
+                reject(new common_1.HttpException(`Git operation failed: ${cleanGitError(err.stderr?.toString() || err.message)}`, common_1.HttpStatus.INTERNAL_SERVER_ERROR));
+            }
+        });
+    }
+    async cicdWebhook(body) {
+        const { repoUrl, prNumber, branch, workflow = 'ultimate_hybrid' } = body;
+        if (!repoUrl) {
+            throw new common_1.HttpException('Missing repoUrl', common_1.HttpStatus.BAD_REQUEST);
+        }
+        this.runAutomatedCicdPipeline(repoUrl, prNumber, branch, workflow).catch(err => {
+            console.error('[CI/CD Pipeline Error]', err);
+        });
+        return { status: 'Pipeline triggered', repoUrl, workflow };
+    }
+    async runAutomatedCicdPipeline(repoUrl, prNumber, branch, workflow) {
+        console.log(`[CI/CD] Starting automated pipeline for ${repoUrl} (PR #${prNumber})`);
+        const tempRoot = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'csharp_projects', 'github_repos');
+        const tempDirName = `cicd_repo_${Date.now()}`;
+        const tempDirPath = path.join(tempRoot, tempDirName);
+        fs.mkdirSync(tempRoot, { recursive: true });
+        await new Promise((resolve, reject) => {
+            (0, child_process_1.exec)(`git clone --depth 1 --quiet -b "${branch}" "${repoUrl}" "${tempDirPath}"`, (error) => {
+                if (error) {
+                    (0, child_process_1.exec)(`git clone --depth 1 --quiet "${repoUrl}" "${tempDirPath}"`, (error2) => {
+                        if (error2)
+                            return reject(error2);
+                        resolve(true);
+                    });
                     return;
                 }
-                (0, child_process_1.exec)(gitCommands[index], { cwd: tempDirPath }, (error, stdout, stderr) => {
-                    if (error) {
-                        if (gitCommands[index].includes('sparse-checkout disable')) {
-                            console.warn('sparse-checkout disable warning (non-fatal):', stderr);
-                            execSequence(index + 1);
-                            return;
-                        }
-                        console.error(`Git command failed: ${gitCommands[index]}`, stderr || error.message);
-                        reject(new common_1.HttpException(`Git operation failed: ${cleanGitError(stderr || error.message)}`, common_1.HttpStatus.INTERNAL_SERVER_ERROR));
-                        return;
-                    }
-                    execSequence(index + 1);
-                });
-            };
-            execSequence(0);
+                resolve(true);
+            });
         });
+        const allCsFiles = scanCsFiles(tempDirPath);
+        const testFiles = allCsFiles.filter(f => {
+            const rel = path.relative(tempDirPath, f).toLowerCase();
+            return rel.includes('test') || rel.endsWith('tests.cs');
+        });
+        const sourceFiles = allCsFiles.filter(f => !testFiles.includes(f));
+        const filesToTest = [];
+        for (const sourceFile of sourceFiles) {
+            const baseName = path.basename(sourceFile, '.cs');
+            const hasTest = testFiles.some(tf => path.basename(tf, '.cs').toLowerCase().includes(baseName.toLowerCase() + 'test'));
+            if (!hasTest) {
+                filesToTest.push(sourceFile);
+            }
+        }
+        if (filesToTest.length === 0) {
+            console.log(`[CI/CD] All ${sourceFiles.length} C# files already have tests. Nothing to do for ${repoUrl}`);
+            try {
+                fs.rmSync(tempDirPath, { recursive: true, force: true });
+            }
+            catch (e) { }
+            return;
+        }
+        console.log(`[CI/CD] Found ${filesToTest.length} files without tests. Starting generation queue...`);
+        const pythonExe = path.join(workspaceRoot, 'ai-unit-test-benchmark', '.venv', 'Scripts', 'python.exe');
+        const apiRunnerScript = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'api_runner.py');
+        const model = 'llama';
+        let generatedCount = 0;
+        for (const targetFile of filesToTest) {
+            const relativePath = path.relative(tempDirPath, targetFile);
+            const sourceCode = fs.readFileSync(targetFile, 'utf8');
+            const tempFileName = `temp_cicd_${Date.now()}.cs`;
+            const tempFilePath = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', tempFileName);
+            fs.writeFileSync(tempFilePath, sourceCode, 'utf8');
+            const command = `"${pythonExe}" "${apiRunnerScript}" --model ${model} --workflow ${workflow} --file "${tempFilePath}" --github-repo-path "${tempDirPath}" --github-file-path "${relativePath}"`;
+            console.log(`[CI/CD] Generating tests for ${relativePath}...`);
+            try {
+                await new Promise((resolve) => {
+                    (0, child_process_1.exec)(command, { cwd: path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner') }, (error, stdout, stderr) => {
+                        try {
+                            fs.unlinkSync(tempFilePath);
+                        }
+                        catch (e) { }
+                        if (error) {
+                            console.error(`[CI/CD] Generation failed for ${relativePath}:`, stderr);
+                            return resolve(false);
+                        }
+                        generatedCount++;
+                        console.log(`[CI/CD] Successfully generated tests for ${relativePath}`);
+                        try {
+                            const parsedResult = JSON.parse(extractJson(stdout));
+                            const cicdDir = path.join(workspaceRoot, 'ai-unit-test-benchmark', 'benchmark_runner', 'results', 'ci_cd');
+                            if (!fs.existsSync(cicdDir))
+                                fs.mkdirSync(cicdDir, { recursive: true });
+                            const logFile = path.join(cicdDir, `cicd_run_${Date.now()}.json`);
+                            fs.writeFileSync(logFile, JSON.stringify({
+                                timestamp: new Date().toISOString(),
+                                file_path: relativePath,
+                                success: parsedResult.success || false,
+                                line_coverage: parsedResult.line_coverage || 0,
+                                evaluator_score: parsedResult.evaluator_score || 0,
+                                cost: parsedResult.cost || 0,
+                                latency: parsedResult.latency || 0,
+                                model: model || 'llama',
+                                workflow: workflow || 'ultimate_hybrid',
+                                mutation_score: parsedResult.mutation_score,
+                                total_mutants: parsedResult.total_mutants,
+                                killed_mutants: parsedResult.killed_mutants,
+                                survived_mutants: parsedResult.survived_mutants,
+                                repoUrl,
+                                prNumber,
+                                branch,
+                                targetFile: relativePath,
+                                result: parsedResult
+                            }, null, 2));
+                        }
+                        catch (e) { }
+                        resolve(true);
+                    });
+                });
+            }
+            catch (err) {
+                console.error(`[CI/CD] Pipeline error on ${relativePath}:`, err);
+            }
+        }
+        if (generatedCount > 0) {
+            console.log(`[CI/CD] Generated ${generatedCount} test files. Committing and pushing to GitHub...`);
+            const githubToken = getGithubToken();
+            if (githubToken) {
+                try {
+                    const repoUrlObj = new URL(repoUrl);
+                    const owner = repoUrlObj.pathname.split('/')[1];
+                    const repo = repoUrlObj.pathname.split('/')[2].replace('.git', '');
+                    const authUrl = `https://${githubToken}@github.com/${owner}/${repo}.git`;
+                    (0, child_process_1.execSync)(`git remote set-url origin "${authUrl}"`, { cwd: tempDirPath, stdio: 'pipe' });
+                    (0, child_process_1.execSync)(`git add .`, { cwd: tempDirPath, stdio: 'pipe' });
+                    const status = (0, child_process_1.execSync)(`git status --porcelain`, { cwd: tempDirPath }).toString().trim();
+                    if (status) {
+                        (0, child_process_1.execSync)(`git -c user.name="AI Unit Test Agent" -c user.email="agent@ai-unit-test.local" commit -m "test: auto-generate missing unit tests via CI/CD"`, { cwd: tempDirPath, stdio: 'pipe' });
+                        (0, child_process_1.execSync)(`git push origin "${branch}"`, { cwd: tempDirPath, stdio: 'pipe' });
+                        console.log(`[CI/CD] Successfully pushed generated tests to branch ${branch}!`);
+                    }
+                }
+                catch (gitErr) {
+                    console.error(`[CI/CD] Failed to push generated tests to GitHub:`, gitErr.stderr?.toString() || gitErr.message);
+                }
+            }
+            else {
+                console.log(`[CI/CD] Skipping push to GitHub because GITHUB_PAT is not configured.`);
+            }
+        }
+        try {
+            fs.rmSync(tempDirPath, { recursive: true, force: true });
+            console.log(`[CI/CD] Cleaned up temporary repository: ${tempDirPath}`);
+        }
+        catch (cleanupErr) {
+            console.error(`[CI/CD] Failed to clean up repository: ${tempDirPath}`, cleanupErr);
+        }
     }
 };
 exports.AppController = AppController;
@@ -572,6 +755,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AppController.prototype, "createGithubPr", null);
+__decorate([
+    (0, common_1.Post)('cicd/webhook'),
+    (0, swagger_1.ApiOperation)({ summary: 'Webhook for GitHub Actions CI/CD to trigger automated AI test generation' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AppController.prototype, "cicdWebhook", null);
 exports.AppController = AppController = __decorate([
     (0, swagger_1.ApiTags)('AI Unit Test Generation'),
     (0, common_1.Controller)('api')
@@ -714,13 +905,27 @@ function cleanGitError(raw) {
     const meaningful = lines.slice(-5);
     return meaningful.join('\n') || raw.trim();
 }
-async function openPullRequest(token, owner, repo, branch, component) {
+async function openPullRequest(token, owner, repo, branch, component, metrics) {
     const url = `https://api.github.com/repos/${owner}/${repo}/pulls`;
+    let bodyContent = `This Pull Request adds C# unit tests generated using the Multi-Agent C# Test Framework.\n\n### Included Components:\n- Target Class: \`${component}\`\n- Test Case Coverage: Automated assertions, mocks, and sandbox-verified compliance.\n`;
+    if (metrics) {
+        bodyContent += `\n### 📊 AI Generation Metrics:\n`;
+        bodyContent += `- **Status**: ${metrics.success ? '✅ Passed Run' : '❌ Failed Run'}\n`;
+        bodyContent += `- **Line Coverage**: ${metrics.line_coverage !== undefined ? metrics.line_coverage.toFixed(2) : 0}%\n`;
+        bodyContent += `- **Branch Coverage**: ${metrics.branch_coverage !== undefined ? metrics.branch_coverage.toFixed(2) : 0}%\n`;
+        bodyContent += `- **Latency**: ${metrics.latency || 0}s\n`;
+        bodyContent += `- **Total Cost**: $${metrics.cost ? metrics.cost.toFixed(5) : 0}\n`;
+        bodyContent += `- **Self-Healing Retries**: ${metrics.healing_attempts || 0}\n`;
+        if (metrics.evaluator_model) {
+            bodyContent += `- **Evaluator**: ${metrics.evaluator_model}\n`;
+            bodyContent += `- **Final Quality Score**: ${metrics.evaluator_score || 'N/A'}/100\n`;
+        }
+    }
     const body = JSON.stringify({
         title: `🤖 Add AI-generated unit tests for ${component}`,
         head: branch,
         base: 'main',
-        body: `This Pull Request adds C# unit tests generated using the Multi-Agent C# Test Framework.\n\n### Included Components:\n- Target Class: \`${component}\`\n- Test Case Coverage: Automated assertions, mocks, and sandbox-verified compliance.`
+        body: bodyContent
     });
     const response = await fetch(url, {
         method: 'POST',
