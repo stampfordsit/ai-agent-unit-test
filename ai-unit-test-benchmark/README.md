@@ -227,7 +227,10 @@ To execute all workflows, datasets (v1 and v2), and models sequentially overnigh
 > py main.py --version v2 --model gptmini --workflow agent --skip-existing
 > ```
 >
+>
 > 🧬 **Mutation Testing:** You can append `--enable-mutation` to the command (e.g., `main.py`) to run Stryker.NET mutation testing on successful compilation runs. For `api_runner.py` (spawned by the web backend), mutation testing runs by default but can be bypassed with `--no-mutation`.
+>
+> ⚡ **Parallel Execution (Isolated Sandboxes):** You can safely run multiple `main.py` instances concurrently in separate terminals for different models. The framework dynamically creates isolated execution sandboxes (e.g. `csharp_projects/BenchmarkTestProject_gptmini`) based on the `--model` flag, preventing `.cs` file overwrites and MSBuild collisions.
 
 ### 1. Single-Pass Generation
 Generates the unit test once, builds/runs it, computes coverage, and evaluates it.
