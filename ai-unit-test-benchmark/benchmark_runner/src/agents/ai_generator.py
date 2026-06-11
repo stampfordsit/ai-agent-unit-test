@@ -115,4 +115,4 @@ class AIGenerator:
         timeout: int = 120
     ):
         return self.generate(prompt, model_name, temperature=temperature, timeout=timeout)
-
+

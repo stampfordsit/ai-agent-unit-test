@@ -600,7 +600,7 @@ def run_api():
         total_prompt_tokens = generation_result["prompt_tokens"]
         total_completion_tokens = generation_result["completion_tokens"]
 
-        if args.workflow == "agent":
+        if args.workflow in ["agent", "agent_loop"]:
             initial_test = generated_test
             review_prompt = build_review_prompt(source_code, generated_test)
             review_result, review_cost = run_worker_text(review_prompt, model_name)
@@ -636,8 +636,8 @@ def run_api():
             capture_initial_state(False, 0.0, 0.0, 0)
 
         # Self-healing retry loop
-        if not result["success"] and args.workflow == "self_healing":
-            max_healing_attempts = 3
+        if not result["success"] and args.workflow in ["self_healing", "single_loop", "agent_loop"]:
+            max_healing_attempts = 2 if args.workflow in ["single_loop", "agent_loop"] else 3
             while not result["success"] and healing_attempts < max_healing_attempts:
                 healing_attempts += 1
                 errors = (result["stdout"] or "") + "\n" + (result["stderr"] or "")
@@ -705,8 +705,8 @@ def run_api():
         )
 
         # Evaluator-guided refinement loop
-        if args.workflow == "evaluator_guided":
-            max_eval_attempts = 3
+        if args.workflow in ["evaluator_guided", "single_loop", "agent_loop"]:
+            max_eval_attempts = 2 if args.workflow in ["single_loop", "agent_loop"] else 3
             eval_attempt = 0
             eval_score_threshold = 75
             current_score = evaluation_result.get("score", 0)

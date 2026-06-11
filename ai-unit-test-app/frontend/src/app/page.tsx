@@ -238,6 +238,21 @@ const WORKFLOW_SINGLE = `graph TD
     Sandbox --> Eval["Evaluator Agent: Semantic Review"]
     Eval --> Done([Completed Report])`;
 
+const WORKFLOW_SINGLE_LOOP = `graph TD
+    Source[Source Code Under Test] --> Worker[Worker Agent: Generate Test]
+    Worker --> GenCode["C# Unit Test Code"]
+    GenCode --> Sandbox["Sandbox: Compile & Run"]
+    Sandbox --> CheckSuccess{Compile OK?}
+    CheckSuccess -- No --> Healing[Self-Healing Max 2 attempts]
+    Healing --> Sandbox
+    CheckSuccess -- Yes --> Eval["Evaluator Agent Review"]
+    Eval --> CheckScore{"Score >= 75?"}
+    CheckScore -- No --> GuidePrompt["Evaluator-Guided Max 2 attempts"]
+    GuidePrompt --> Refine[AI Refines Test]
+    Refine --> Sandbox
+    CheckScore -- Yes --> Done([Completed Report])`;
+
+
 const WORKFLOW_AGENT = `graph TD
     Source[Source Code] --> Worker1[Worker Agent: Generate Test]
     Worker1 --> InitialTest[Initial Unit Test]
@@ -250,6 +265,24 @@ const WORKFLOW_AGENT = `graph TD
     
     FinalTest --> Sandbox["Sandbox: .NET Compile & Run"]
     Sandbox --> Eval["Evaluator Agent: Final Evaluation"]`;
+
+const WORKFLOW_AGENT_LOOP = `graph TD
+    Source[Source Code] --> Worker1[Worker Agent: Generate Test]
+    Worker1 --> InitialTest[Initial Unit Test]
+    InitialTest & Source --> Reviewer["Reviewer Agent: Critique"]
+    Reviewer --> Critique[Feedback: Strengths & Weaknesses]
+    Critique & InitialTest & Source --> Worker2[Worker Agent: Refine Test]
+    Worker2 --> FinalTest[Improved Unit Test]
+    FinalTest --> Sandbox["Sandbox: Compile & Run"]
+    Sandbox --> CheckSuccess{Compile OK?}
+    CheckSuccess -- No --> Healing[Self-Healing Max 2 attempts]
+    Healing --> Sandbox
+    CheckSuccess -- Yes --> Eval["Evaluator Agent Review"]
+    Eval --> CheckScore{"Score >= 75?"}
+    CheckScore -- No --> GuidePrompt["Evaluator-Guided Max 2 attempts"]
+    GuidePrompt --> Refine[AI Refines Test]
+    Refine --> Sandbox
+    CheckScore -- Yes --> Done([Completed Report])`;
 
 const WORKFLOW_SELF_HEALING = `graph TD
     Start[Generate Initial Test] --> RunSandbox["Sandbox: Compile & Run"]
@@ -339,7 +372,7 @@ export default function Home() {
   const [workflowSubTab, setWorkflowSubTab] = useState<'orchestration' | 'pipelines'>('orchestration');
   const [paramsSubTab, setParamsSubTab] = useState<'parameters' | 'summary'>('parameters');
   const [summaryReportTab, setSummaryReportTab] = useState<'overall' | 'category' | 'split' | 'cost' | 'failure' | 'healing' | 'latency' | 'evaluator' | 'selector' | 'mutation'>('overall');
-  const [orchestrationTab, setOrchestrationTab] = useState<'single' | 'agent' | 'self_healing' | 'best_of_n' | 'evaluator_guided' | 'ultimate_hybrid'>('single');
+  const [orchestrationTab, setOrchestrationTab] = useState<'single' | 'agent' | 'self_healing' | 'best_of_n' | 'evaluator_guided' | 'ultimate_hybrid' | 'single_loop' | 'agent_loop'>('single');
   const [pipelineTab, setPipelineTab] = useState<'benchmark' | 'demo' | 'github' | 'hook'>('benchmark');
   const [paramsGroupTab, setParamsGroupTab] = useState<'group1' | 'group2' | 'group3' | 'group4' | 'group5' | 'group6'>('group1');
   const [ultimateSubTab, setUltimateSubTab] = useState<'flow' | 'details'>('flow');
@@ -670,18 +703,32 @@ export default function Home() {
                   1. Single-Pass
                 </button>
                 <button
+                  className={`tab-btn pb-2 ${orchestrationTab === 'single_loop' ? 'active' : ''}`}
+                  onClick={() => setOrchestrationTab('single_loop')}
+                  style={{ fontSize: '0.8rem', padding: '0.4rem 0.6rem', borderBottom: 'none' }}
+                >
+                  2. Single-Pass + Loop
+                </button>
+                <button
                   className={`tab-btn pb-2 ${orchestrationTab === 'agent' ? 'active' : ''}`}
                   onClick={() => setOrchestrationTab('agent')}
                   style={{ fontSize: '0.8rem', padding: '0.4rem 0.6rem', borderBottom: 'none' }}
                 >
-                  2. Multi-Agent Critique
+                  3. Multi-Agent Critique
+                </button>
+                <button
+                  className={`tab-btn pb-2 ${orchestrationTab === 'agent_loop' ? 'active' : ''}`}
+                  onClick={() => setOrchestrationTab('agent_loop')}
+                  style={{ fontSize: '0.8rem', padding: '0.4rem 0.6rem', borderBottom: 'none' }}
+                >
+                  4. Agent + Loop
                 </button>
                 <button
                   className={`tab-btn pb-2 ${orchestrationTab === 'ultimate_hybrid' ? 'active' : ''}`}
                   onClick={() => setOrchestrationTab('ultimate_hybrid')}
                   style={{ fontSize: '0.8rem', padding: '0.4rem 0.6rem', borderBottom: 'none' }}
                 >
-                  3. Ultimate Hybrid
+                  5. Ultimate Hybrid
                 </button>
               </div>
 
@@ -710,11 +757,26 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Workflow 2 */}
+              {/* Workflow 2 (Single Loop) */}
+              {orchestrationTab === 'single_loop' && (
+                <div style={{ border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '12px', padding: '1.5rem', background: 'rgba(255, 255, 255, 0.01)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#f8fafc', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span className="gradient-text">2. Single-Pass + Feedback Loop</span>
+                    <code style={{ fontSize: '0.75rem', color: '#818cf8', background: 'rgba(129, 140, 248, 0.1)', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>single_loop</code>
+                  </h3>
+                  <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: 0, lineHeight: '1.5' }}>
+                    <strong>แนวคิดการทำงาน</strong>: อัปเกรดจากแบบแรก (Single) โดยหากนำโค้ดที่สร้างขึ้นไปทดสอบแล้วคอมไพล์พัง หรือได้คะแนนต่ำ ระบบจะวนลูปให้ AI ซ่อมโค้ดและปรับปรุงคุณภาพต่อจนกว่าจะผ่านเกณฑ์หรือครบโควต้ารอบที่ตั้งไว้ (คล้ายพฤติกรรมการทำงานของ Ultimate Hybrid แต่ไม่มี Best-of-N)
+                  </p>
+
+                  <Mermaid chart={WORKFLOW_SINGLE_LOOP} />
+                </div>
+              )}
+
+              {/* Workflow 3 */}
               {orchestrationTab === 'agent' && (
                 <div style={{ border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '12px', padding: '1.5rem', background: 'rgba(255, 255, 255, 0.01)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#f8fafc', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span className="gradient-text">2. Multi-Agent Critique &amp; Refinement</span>
+                    <span className="gradient-text">3. Multi-Agent Critique &amp; Refinement</span>
                     <code style={{ fontSize: '0.75rem', color: '#818cf8', background: 'rgba(129, 140, 248, 0.1)', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>agent</code>
                   </h3>
                   <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: 0, lineHeight: '1.5' }}>
@@ -735,11 +797,26 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Workflow 3 (Ultimate Hybrid) */}
+              {/* Workflow 4 (Agent Loop) */}
+              {orchestrationTab === 'agent_loop' && (
+                <div style={{ border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '12px', padding: '1.5rem', background: 'rgba(255, 255, 255, 0.01)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#f8fafc', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span className="gradient-text">4. Agent + Feedback Loop</span>
+                    <code style={{ fontSize: '0.75rem', color: '#818cf8', background: 'rgba(129, 140, 248, 0.1)', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>agent_loop</code>
+                  </h3>
+                  <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: 0, lineHeight: '1.5' }}>
+                    <strong>แนวคิดการทำงาน</strong>: นำข้อดีของการทำงานร่วมกัน 2 เอเจนต์ (Worker + Reviewer) มาผสมผสานกับกระบวนการ Feedback Loop หากโค้ดที่ขัดเกลาแล้วนำไปคอมไพล์แล้วยังเจอบั๊ก หรือได้คะแนน Review ต่ำกว่าเกณฑ์ ก็จะวนลูปให้ AI ช่วยกันแก้ต่อจนกว่าจะพร้อมใช้งาน
+                  </p>
+
+                  <Mermaid chart={WORKFLOW_AGENT_LOOP} />
+                </div>
+              )}
+
+              {/* Workflow 5 (Ultimate Hybrid) */}
               {orchestrationTab === 'ultimate_hybrid' && (
                 <div style={{ border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '12px', padding: '1.5rem', background: 'rgba(255, 255, 255, 0.01)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#f8fafc', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span className="gradient-text">3. Ultimate Hybrid (Proposed Framework)</span>
+                    <span className="gradient-text">5. Ultimate Hybrid (Proposed Framework)</span>
                     <code style={{ fontSize: '0.75rem', color: '#818cf8', background: 'rgba(129, 140, 248, 0.1)', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>ultimate_hybrid</code>
                   </h3>
                   <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: 0, lineHeight: '1.5' }}>
@@ -1951,7 +2028,9 @@ ${method.body.split('\n').map(line => '        ' + line).join('\n')}
                 disabled={loading}
               >
                 <option value="single">Single-pass (Direct Prompt)</option>
+                <option value="single_loop">Single-pass + Feedback Loop</option>
                 <option value="agent">Worker + Reviewer Agent (Critique)</option>
+                <option value="agent_loop">Agent + Feedback Loop</option>
                 <option value="self_healing">Self-Healing Loop (Compiler Feedback)</option>
                 <option value="best_of_n">Best-of-N Candidate Selection</option>
                 <option value="evaluator_guided">Evaluator-Guided Refinement Loop</option>

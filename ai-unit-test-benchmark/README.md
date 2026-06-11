@@ -209,6 +209,12 @@ The system supports automated integration directly into developer CI/CD pipeline
 
 Run the benchmark runner from the `ai-unit-test-benchmark/benchmark_runner/` directory using your Python virtual environment.
 
+### 🚀 Automated Full Pipeline Runner (`run_pipeline.ps1`)
+To execute all workflows, datasets (v1 and v2), and models sequentially overnight or unattended, you can use the provided PowerShell pipeline script. It automatically manages outputs, creates log files, runs the summary scripts, and supports resuming via `--skip-existing`.
+```bash
+./run_pipeline.ps1
+```
+
 > 💡 **Supported Models (`--model`):**
 > * `gptmini` (Azure GPT-4.1-mini)
 > * `llama` (Azure Llama-3.3-70B-Instruct)
@@ -229,10 +235,22 @@ Generates the unit test once, builds/runs it, computes coverage, and evaluates i
 py main.py --version v2 --model gptmini --workflow single
 ```
 
+### 1.1 Single-Pass + Feedback Loop (`single_loop`)
+Generates the unit test once, but adds up to 2 rounds of compiler Self-Healing and up to 2 rounds of Evaluator-Guided Refinement.
+```bash
+py main.py --version v2 --model gptmini --workflow single_loop
+```
+
 ### 2. Multi-Agent Critique & Refinement
 Invokes a critique phase where a Reviewer Agent reviews the test and a Worker Agent refines it before sandbox compilation.
 ```bash
 py main.py --version v2 --model gptmini --workflow agent
+```
+
+### 2.1 Multi-Agent + Feedback Loop (`agent_loop`)
+Invokes the Reviewer critique phase, then proceeds to add up to 2 rounds of compiler Self-Healing and up to 2 rounds of Evaluator-Guided Refinement.
+```bash
+py main.py --version v2 --model gptmini --workflow agent_loop
 ```
 
 ### 3. Self-Healing (Compiler-Feedback)
