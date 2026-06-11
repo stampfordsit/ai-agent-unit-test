@@ -23,7 +23,7 @@ from src.agents.prompts.evaluator_guided_prompt import build_evaluator_guided_pr
 def run_api():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True, help="AI Model to use (e.g. gptmini, llama, deepseekv3)")
-    parser.add_argument("--workflow", default="ultimate_hybrid", help="Workflow to use: single, agent, self_healing, best_of_n, evaluator_guided, ultimate_hybrid")
+    parser.add_argument("--workflow", default="compiler-guided-multi-agent", help="Workflow to use: single, agent, self-healing, best-of-n, evaluator-guided, compiler-guided-multi-agent")
     parser.add_argument("--file", required=True, help="Path to C# source code file to test (could be temp snippet or actual file)")
     parser.add_argument("--no-mutation", action="store_true", help="Skip Stryker mutation testing")
     parser.add_argument("--github-repo-path", help="Path to the cloned GitHub repository (triggers native execution)")
@@ -162,7 +162,7 @@ def run_api():
         
         return evaluation, p_tokens_used, c_tokens_used, cost_used, eval_time
 
-    if args.workflow == "best_of_n":
+    if args.workflow == "best-of-n":
         candidates = []
         N = 3
         start_gen_time = time.time()
@@ -272,7 +272,7 @@ def run_api():
             for idx, c in enumerate(candidates)
         ]
         
-    elif args.workflow == "ultimate_hybrid":
+    elif args.workflow == "compiler-guided-multi-agent":
         candidates = []
         N = 3
         start_gen_time = time.time()
@@ -600,7 +600,7 @@ def run_api():
         total_prompt_tokens = generation_result["prompt_tokens"]
         total_completion_tokens = generation_result["completion_tokens"]
 
-        if args.workflow in ["agent", "agent_loop"]:
+        if args.workflow in ["agent", "agent-pass"]:
             initial_test = generated_test
             review_prompt = build_review_prompt(source_code, generated_test)
             review_result, review_cost = run_worker_text(review_prompt, model_name)
@@ -636,8 +636,8 @@ def run_api():
             capture_initial_state(False, 0.0, 0.0, 0)
 
         # Self-healing retry loop
-        if not result["success"] and args.workflow in ["self_healing", "single_loop", "agent_loop"]:
-            max_healing_attempts = 2 if args.workflow in ["single_loop", "agent_loop"] else 3
+        if not result["success"] and args.workflow in ["self-healing", "single-pass", "agent-pass"]:
+            max_healing_attempts = 2 if args.workflow in ["single-pass", "agent-pass"] else 3
             while not result["success"] and healing_attempts < max_healing_attempts:
                 healing_attempts += 1
                 errors = (result["stdout"] or "") + "\n" + (result["stderr"] or "")
@@ -696,7 +696,7 @@ def run_api():
         evaluator_cost += e_cost
         evaluator_latency += eval_time
 
-        # capture initial state for single / self_healing / agent workflows if not already captured
+        # capture initial state for single / self-healing / agent workflows if not already captured
         capture_initial_state(
             result["success"],
             coverage_metrics["line_coverage"],
@@ -705,8 +705,8 @@ def run_api():
         )
 
         # Evaluator-guided refinement loop
-        if args.workflow in ["evaluator_guided", "single_loop", "agent_loop"]:
-            max_eval_attempts = 2 if args.workflow in ["single_loop", "agent_loop"] else 3
+        if args.workflow in ["evaluator-guided", "single-pass", "agent-pass"]:
+            max_eval_attempts = 2 if args.workflow in ["single-pass", "agent-pass"] else 3
             eval_attempt = 0
             eval_score_threshold = 75
             current_score = evaluation_result.get("score", 0)

@@ -22,8 +22,8 @@ def generate_evaluator_report():
             if not workflow_path.is_dir():
                 continue
 
-            # Analyze evaluator_guided and ultimate_hybrid workflows for this report
-            if workflow_name not in ["evaluator_guided", "ultimate_hybrid"]:
+            # Analyze evaluator-guided and compiler-guided-multi-agent workflows for this report
+            if workflow_name not in ["evaluator-guided", "compiler-guided-multi-agent"]:
                 continue
 
             print(f"Generating evaluator-guided report for {version_name}/{workflow_name}...")

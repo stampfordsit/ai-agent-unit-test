@@ -31,9 +31,9 @@ This platform is developed as part of a Master of Engineering (M.Eng.) thesis pr
 
 | Detail | Description |
 | :--- | :--- |
-| **Research Topic** | A Multi-Agent LLM-Based Approach for Automated Unit Test Generation and Optimization in C# Programs <br> *(แนวทางแบบ Multi-Agent ร่วมกับ Large Language Models สำหรับการสร้างและปรับปรุง Unit Test อัตโนมัติในโปรแกรมภาษา C#)* |
+| **Research Topic** | A Multi-Agent LLM-Based Approach for Automated Unit Test Generation and Optimization in C# Programs <br> *(แนวทางระบบหลายตัวแทนร่วมกับโมเดลภาษาขนาดใหญ่สำหรับการสร้างและปรับปรุงการทดสอบระดับหน่วยอัตโนมัติในโปรแกรมภาษา C#)* |
 | **Researcher** | **Mr. Attaphon Pungjaree** (Student ID: 645162020028) |
-| **Thesis Advisor** | **Dr. Thanaphat Khankajit** |
+| **Thesis Advisor** | **Dr. Thanapat Kangkachit** |
 | **Degree** | Master of Engineering (M.Eng.) |
 | **Major** | Artificial Intelligence and Data Engineering |
 | **College** | College of Engineering and Technology |

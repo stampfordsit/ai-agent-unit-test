@@ -152,7 +152,7 @@ The framework includes a local Git pre-commit hook that acts as a quality gate, 
 ### How it works:
 1. When you run `git commit`, the pre-commit hook triggers.
 2. It detects staged C# files (excluding test files).
-3. For each staged C# file, it calls the AI Engine to generate a unit test suite using the `self_healing` workflow with the `gptmini` model.
+3. For each staged C# file, it calls the AI Engine to generate a unit test suite using the `self-healing` workflow with the `gptmini` model.
 4. The generated unit tests are executed in the local sandbox:
    - If compilation or execution fails, the commit is **blocked**.
    - If line coverage is below the threshold (**80%**), the commit is **blocked**.
@@ -238,10 +238,10 @@ Generates the unit test once, builds/runs it, computes coverage, and evaluates i
 py main.py --version v2 --model gptmini --workflow single
 ```
 
-### 1.1 Single-Pass + Feedback Loop (`single_loop`)
+### 1.1 Single-Pass + Feedback Loop (`single-pass`)
 Generates the unit test once, but adds up to 2 rounds of compiler Self-Healing and up to 2 rounds of Evaluator-Guided Refinement.
 ```bash
-py main.py --version v2 --model gptmini --workflow single_loop
+py main.py --version v2 --model gptmini --workflow single-pass
 ```
 
 ### 2. Multi-Agent Critique & Refinement
@@ -250,28 +250,28 @@ Invokes a critique phase where a Reviewer Agent reviews the test and a Worker Ag
 py main.py --version v2 --model gptmini --workflow agent
 ```
 
-### 2.1 Multi-Agent + Feedback Loop (`agent_loop`)
+### 2.1 Multi-Agent + Feedback Loop (`agent-pass`)
 Invokes the Reviewer critique phase, then proceeds to add up to 2 rounds of compiler Self-Healing and up to 2 rounds of Evaluator-Guided Refinement.
 ```bash
-py main.py --version v2 --model gptmini --workflow agent_loop
+py main.py --version v2 --model gptmini --workflow agent-pass
 ```
 
 ### 3. Self-Healing (Compiler-Feedback)
 Attempts to iteratively resolve C# build or runtime test failures based on compiler error codes (`CSxxxx`) up to 3 times.
 ```bash
-py main.py --version v2 --model gptmini --workflow self_healing
+py main.py --version v2 --model gptmini --workflow self-healing
 ```
 
 ### 4. Best-of-N Candidate Selection
 Generates $N=3$ candidate variations with temperature = 0.5, runs them in the sandbox, obtains coverage and semantic grades from the Evaluator Agent, and saves only the candidate with the highest overall evaluator score.
 ```bash
-py main.py --version v2 --model gptmini --workflow best_of_n
+py main.py --version v2 --model gptmini --workflow best-of-n
 ```
 
 ### 5. Evaluator-Guided Iterative Refinement
 Generates a unit test and evaluates it. If the Evaluator Agent's score is below 75, the generator receives the evaluator's specific critique and suggestions to refine the test, repeating up to 3 times or until the score threshold is met.
 ```bash
-py main.py --version v2 --model gptmini --workflow evaluator_guided
+py main.py --version v2 --model gptmini --workflow evaluator-guided
 ```
 
 ### 6. Ultimate Hybrid (Proposed Framework)
@@ -284,11 +284,11 @@ Integrates Best-of-N Candidate Generation ($N=3$, temperature = 0.5), compiler-f
 - **Per-Method Test Isolation**: The `api_runner.py` accepts an optional `--method-name` argument to natively isolate test generation. It enforces strict test class naming rules (e.g. `CalculatorService_AddTests`) in the AI Prompt and prevents file collision (overwriting) when generating tests for multiple methods in the same source class.
 
 ```bash
-py main.py --version v2 --model gptmini --workflow ultimate_hybrid
+py main.py --version v2 --model gptmini --workflow compiler-guided-multi-agent
 ```
 With real-time log capture:
 ```bash
-py main.py --version v2 --model gptmini --workflow ultimate_hybrid 2>&1 | Tee-Object results/logs/run_log_v2_gptmini_ultimate_hybrid.txt
+py main.py --version v2 --model gptmini --workflow compiler-guided-multi-agent 2>&1 | Tee-Object results/logs/run_log_v2_gptmini_ultimate_hybrid.txt
 ```
 
 ### 7. Generate Analytical Summaries
@@ -408,9 +408,9 @@ This platform is developed as part of a Master of Engineering (M.Eng.) thesis pr
 
 | Detail | Description |
 | :--- | :--- |
-| **Research Topic** | A Multi-Agent LLM-Based Approach for Automated Unit Test Generation and Optimization in C# Programs <br> *(แนวทางแบบ Multi-Agent ร่วมกับ Large Language Models สำหรับการสร้างและปรับปรุง Unit Test อัตโนมัติในโปรแกรมภาษา C#)* |
+| **Research Topic** | A Multi-Agent LLM-Based Approach for Automated Unit Test Generation and Optimization in C# Programs <br> *(แนวทางระบบหลายตัวแทนร่วมกับโมเดลภาษาขนาดใหญ่สำหรับการสร้างและปรับปรุงการทดสอบระดับหน่วยอัตโนมัติในโปรแกรมภาษา C#)* |
 | **Researcher** | **Mr. Attaphon Pungjaree** (Student ID: 645162020028) |
-| **Thesis Advisor** | **Dr. Thanaphat Khankajit** |
+| **Thesis Advisor** | **Dr. Thanapat Kangkachit** |
 | **Degree** | Master of Engineering (M.Eng.) |
 | **Major** | Artificial Intelligence and Data Engineering |
 | **College** | College of Engineering and Technology |

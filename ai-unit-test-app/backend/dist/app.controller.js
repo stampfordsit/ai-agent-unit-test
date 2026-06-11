@@ -522,7 +522,7 @@ let AppController = class AppController {
         });
     }
     async cicdWebhook(body) {
-        const { repoUrl, prNumber, branch, workflow = 'ultimate_hybrid' } = body;
+        const { repoUrl, prNumber, branch, workflow = 'compiler-guided-multi-agent' } = body;
         if (!repoUrl) {
             throw new common_1.HttpException('Missing repoUrl', common_1.HttpStatus.BAD_REQUEST);
         }
@@ -613,7 +613,7 @@ let AppController = class AppController {
                                 cost: parsedResult.cost || 0,
                                 latency: parsedResult.latency || 0,
                                 model: model || 'llama',
-                                workflow: workflow || 'ultimate_hybrid',
+                                workflow: workflow || 'compiler-guided-multi-agent',
                                 mutation_score: parsedResult.mutation_score,
                                 total_mutants: parsedResult.total_mutants,
                                 killed_mutants: parsedResult.killed_mutants,

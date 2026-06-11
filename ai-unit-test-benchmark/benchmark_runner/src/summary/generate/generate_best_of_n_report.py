@@ -23,8 +23,8 @@ def generate_best_of_n_report():
             if not workflow_path.is_dir():
                 continue
 
-            # Analyze best_of_n and ultimate_hybrid workflows
-            if workflow_name not in ["best_of_n", "ultimate_hybrid"]:
+            # Analyze best-of-n and compiler-guided-multi-agent workflows
+            if workflow_name not in ["best-of-n", "compiler-guided-multi-agent"]:
                 continue
 
             print(f"Generating Best-of-N selection report for {version_name}/{workflow_name}...")

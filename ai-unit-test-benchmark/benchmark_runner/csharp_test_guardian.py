@@ -47,7 +47,7 @@ def main():
         print(f"\n⚡ Generating & validating tests for {cs_file}...")
         
         # Run api_runner.py
-        cmd = f'"{venv_python}" "{api_runner_script}" --model gptmini --workflow self_healing --file "{abs_file_path}"'
+        cmd = f'"{venv_python}" "{api_runner_script}" --model gptmini --workflow self-healing --file "{abs_file_path}"'
         code, stdout, stderr = run_cmd(cmd, cwd=str(script_dir))
         
         if code != 0:
@@ -114,7 +114,7 @@ def main():
                 "cost": result.get("cost", 0),
                 "latency": result.get("latency", 0),
                 "model": "gptmini",
-                "workflow": "self_healing",
+                "workflow": "self-healing",
                 "mutation_score": result.get("mutation_score", None),
                 "total_mutants": result.get("total_mutants", None),
                 "killed_mutants": result.get("killed_mutants", None),

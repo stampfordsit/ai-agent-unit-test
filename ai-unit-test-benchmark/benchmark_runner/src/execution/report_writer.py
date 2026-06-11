@@ -9,8 +9,9 @@ class ReportWriter:
     def save_result(self, result, model_name, version, workflow):
         benchmark_id = result["benchmark_id"]
         safe_model_name = (model_name.replace(".", "_").replace("-", "_"))
+        workflow_folder = workflow.replace("-", "_")
 
-        model_report_path = (f"{self.report_path}/{version}/{workflow}/{safe_model_name}")
+        model_report_path = (f"{self.report_path}/{version}/{workflow_folder}/{safe_model_name}")
         Path(model_report_path).mkdir(parents=True,exist_ok=True)
         output_path = (f"{model_report_path}/{benchmark_id}.json")
 

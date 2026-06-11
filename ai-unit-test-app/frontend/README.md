@@ -31,7 +31,7 @@ The web application is split into three main modules accessible via the navigati
    - **Full-Repo Cloning**: Instead of partial clones, the system pulls the entire repository dependency tree, allowing C# projects to compile and resolve dependencies correctly natively.
    - **Project Generator**: Automatically scans for `.csproj` files linked to target `.cs` files. If a test project doesn't exist, it intelligently scaffolds a new `xUnit` test project on the fly (adding Moq and Coverlet automatically).
    - **Native Execution**: AI-generated tests are injected and executed directly inside the cloned GitHub project rather than a generic sandbox, ensuring real-world compilation and dependency resolution.
-   - **Automated Webhook Actions**: Features a dedicated `POST /api/cicd/webhook` for GitHub Actions integration. You can embed the provided `ai-unit-test.yml` into any C# project to trigger AI unit test generation and validation automatically on Pull Requests using the `ultimate_hybrid` workflow.
+   - **Automated Webhook Actions**: Features a dedicated `POST /api/cicd/webhook` for GitHub Actions integration. You can embed the provided `ai-unit-test.yml` into any C# project to trigger AI unit test generation and validation automatically on Pull Requests using the `compiler-guided-multi-agent` workflow.
 
 ## Project Setup
 
@@ -72,9 +72,9 @@ This platform is developed as part of a Master of Engineering (M.Eng.) thesis pr
 
 | Detail | Description |
 | :--- | :--- |
-| **Research Topic** | A Multi-Agent LLM-Based Approach for Automated Unit Test Generation and Optimization in C# Programs <br> *(แนวทางแบบ Multi-Agent ร่วมกับ Large Language Models สำหรับการสร้างและปรับปรุง Unit Test อัตโนมัติในโปรแกรมภาษา C#)* |
+| **Research Topic** | A Multi-Agent LLM-Based Approach for Automated Unit Test Generation and Optimization in C# Programs <br> *(แนวทางระบบหลายตัวแทนร่วมกับโมเดลภาษาขนาดใหญ่สำหรับการสร้างและปรับปรุงการทดสอบระดับหน่วยอัตโนมัติในโปรแกรมภาษา C#)* |
 | **Researcher** | **Mr. Attaphon Pungjaree** (Student ID: 645162020028) |
-| **Thesis Advisor** | **Dr. Thanaphat Khankajit** |
+| **Thesis Advisor** | **Dr. Thanapat Kangkachit** |
 | **Degree** | Master of Engineering (M.Eng.) |
 | **Major** | Artificial Intelligence and Data Engineering |
 | **College** | College of Engineering and Technology |

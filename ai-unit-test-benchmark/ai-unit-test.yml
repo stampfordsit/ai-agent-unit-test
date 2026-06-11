@@ -17,5 +17,5 @@ jobs:
               "repoUrl": "${{ github.server_url }}/${{ github.repository }}",
               "prNumber": "${{ github.event.pull_request.number }}",
               "branch": "${{ github.head_ref }}",
-              "workflow": "ultimate_hybrid"
+              "workflow": "compiler-guided-multi-agent"
             }'

@@ -105,13 +105,13 @@ Ensure you have the following installed:
 The platform implements eight main workflows to generate, evaluate, and optimize unit tests:
 
 1. **Single-Pass (`single`)**: Basic single-pass generation using a worker agent.
-2. **Single-Pass + Feedback Loop (`single_loop`)**: Basic generation with up to 2 rounds of compiler self-healing and evaluator-guided refinement.
+2. **Single-Pass + Feedback Loop (`single-pass`)**: Basic generation with up to 2 rounds of compiler self-healing and evaluator-guided refinement.
 3. **Multi-Agent Critique (`agent`)**: Reviewer agent critiques the worker agent's initial test code, which is then refined before compile/run tests.
-4. **Multi-Agent + Feedback Loop (`agent_loop`)**: Multi-agent critique followed by up to 2 rounds of compiler self-healing and evaluator-guided refinement.
-5. **Self-Healing (`self_healing`)**: Compiler feedback loop where build errors are parsed and sent back to the AI to auto-fix code (up to 3 attempts).
-6. **Best-of-N (`best_of_n`)**: Generates $N$ candidate tests in parallel, runs them in the sandbox, and chooses the one with the highest quality score.
-7. **Evaluator-Guided (`evaluator_guided`)**: Iteratively refines the test code guided by the Evaluator Agent's structured scores and suggestions.
-8. **Ultimate Hybrid (`ultimate_hybrid`)**: The ultimate pipeline combining Best-of-N, Self-Healing, and Evaluator-Guided refinements to achieve the highest possible coverage and test quality.
+4. **Multi-Agent + Feedback Loop (`agent-pass`)**: Multi-agent critique followed by up to 2 rounds of compiler self-healing and evaluator-guided refinement.
+5. **Self-Healing (`self-healing`)**: Compiler feedback loop where build errors are parsed and sent back to the AI to auto-fix code (up to 3 attempts).
+6. **Best-of-N (`best-of-n`)**: Generates $N$ candidate tests in parallel, runs them in the sandbox, and chooses the one with the highest quality score.
+7. **Evaluator-Guided (`evaluator-guided`)**: Iteratively refines the test code guided by the Evaluator Agent's structured scores and suggestions.
+8. **Ultimate Hybrid (`compiler-guided-multi-agent`)**: The ultimate pipeline combining Best-of-N, Self-Healing, and Evaluator-Guided refinements to achieve the highest possible coverage and test quality.
 
 > **💡 Smart Prompt Engine**: The AI test generator features **Dynamic Namespace Extraction**. It automatically scans your uploaded C# source code to extract the correct `namespace`, ensuring generated tests seamlessly compile alongside your real-world GitHub projects without hardcoded project names.
 
@@ -162,7 +162,7 @@ To test the CI/CD integration locally using a real GitHub repository:
                  "repoUrl": "${{ github.server_url }}/${{ github.repository }}",
                  "prNumber": "${{ github.event.pull_request.number }}",
                  "branch": "${{ github.head_ref }}",
-                 "workflow": "ultimate_hybrid",
+                 "workflow": "compiler-guided-multi-agent",
                  "model": "gptmini"
                }'
    ```
@@ -225,9 +225,9 @@ This platform is developed as part of a Master of Engineering (M.Eng.) thesis pr
 
 | Detail | Description |
 | :--- | :--- |
-| **Research Topic** | A Multi-Agent LLM-Based Approach for Automated Unit Test Generation and Optimization in C# Programs <br> *(แนวทางแบบ Multi-Agent ร่วมกับ Large Language Models สำหรับการสร้างและปรับปรุง Unit Test อัตโนมัติในโปรแกรมภาษา C#)* |
+| **Research Topic** | A Multi-Agent LLM-Based Approach for Automated Unit Test Generation and Optimization in C# Programs <br> *(แนวทางระบบหลายตัวแทนร่วมกับโมเดลภาษาขนาดใหญ่สำหรับการสร้างและปรับปรุงการทดสอบระดับหน่วยอัตโนมัติในโปรแกรมภาษา C#)* |
 | **Researcher** | **Mr. Attaphon Pungjaree** (Student ID: 645162020028) |
-| **Thesis Advisor** | **Dr. Thanaphat Khankajit** |
+| **Thesis Advisor** | **Dr. Thanapat Kangkachit** |
 | **Degree** | Master of Engineering (M.Eng.) |
 | **Major** | Artificial Intelligence and Data Engineering |
 | **College** | College of Engineering and Technology |

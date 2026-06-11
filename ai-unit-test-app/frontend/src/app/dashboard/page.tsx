@@ -2171,7 +2171,7 @@ export default function Dashboard() {
                       <span>⌬</span>
                       Source &amp; Tests
                     </button>
-                    {selectedRun.workflow === 'best_of_n' && selectedRun.best_of_n_candidates && selectedRun.best_of_n_candidates.length > 0 && (
+                    {selectedRun.workflow === 'best-of-n' && selectedRun.best_of_n_candidates && selectedRun.best_of_n_candidates.length > 0 && (
                       <button
                         onClick={() => setModalTab('candidates')}
                         style={{
@@ -3272,7 +3272,7 @@ export default function Dashboard() {
               <strong>Research Topic:</strong> A Multi-Agent LLM-Based Approach for Automated Unit Test Generation and Optimization in C# Programs
             </p>
             <p style={{ margin: '0.25rem 0', lineHeight: '1.5' }}>
-              (การประยุกต์ใช้แนวทางหลายเอเจนต์โดยใช้โมเดลภาษาขนาดใหญ่สำหรับการสร้างและเพิ่มประสิทธิภาพ Unit Test อัตโนมัติในโปรแกรม C#)
+              (แนวทางระบบหลายตัวแทนร่วมกับโมเดลภาษาขนาดใหญ่สำหรับการสร้างและปรับปรุงการทดสอบระดับหน่วยอัตโนมัติในโปรแกรมภาษา C#)
             </p>
           </div>
 
@@ -3281,7 +3281,7 @@ export default function Dashboard() {
               Researcher and University
             </h4>
             <p style={{ margin: '0.25rem 0' }}><strong>Researcher:</strong> Mr. Attaphon Pungjaree</p>
-            <p style={{ margin: '0.25rem 0' }}><strong>Thesis Advisor:</strong> Dr. Thanaphat Khankajit</p>
+            <p style={{ margin: '0.25rem 0' }}><strong>Thesis Advisor:</strong> Dr. Thanapat Kangkachit</p>
             <p style={{ margin: '0.25rem 0' }}><strong>Major:</strong> Artificial Intelligence and Data Engineering</p>
             <p style={{ margin: '0.25rem 0' }}><strong>Degree:</strong> Master of Engineering (M.Eng.)</p>
             <p style={{ margin: '0.25rem 0' }}><strong>College:</strong> College of Engineering and Technology</p>
