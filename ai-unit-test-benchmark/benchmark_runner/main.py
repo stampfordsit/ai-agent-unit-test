@@ -23,7 +23,7 @@ print("STARTING BENCHMARK")
 loader = DatasetLoader()
 generator = AIGenerator()
 evaluator = EvaluatorAgent()
-executor = TestExecutor()
+
 writer = ReportWriter()
 coverage_reader = CoverageReader()
 
@@ -47,6 +47,10 @@ for model_name in models:
     print("=" * 50)
     print(f"RUNNING MODEL: {model_name}")
     print(f"WORKFLOW: {args.workflow}")
+    
+    safe_model_name = model_name.replace(".", "_").replace("-", "_")
+    executor = TestExecutor(sandbox_id=safe_model_name)
+    
     start_time = time.time()
 
     pricing = MODEL_PRICING.get(model_name, {})

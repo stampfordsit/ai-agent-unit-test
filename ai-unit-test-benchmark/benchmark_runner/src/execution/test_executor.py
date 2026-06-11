@@ -6,9 +6,10 @@ from src.execution.project_generator import ProjectGenerator
 
 class TestExecutor:
 
-    def __init__(self, mode="benchmark", repo_path=None, file_path=None, method_name=None):
+    def __init__(self, mode="benchmark", repo_path=None, file_path=None, method_name=None, sandbox_id=None):
         self.mode = mode
         self.method_name = method_name
+        self.sandbox_id = f"_{sandbox_id}" if sandbox_id else ""
         if mode == "github_native":
             # Native GitHub project execution mode
             abs_repo_path = Path(repo_path).resolve()
@@ -44,10 +45,15 @@ class TestExecutor:
             self.source_file_path = f"{self.source_project_path}/SourceCode.cs"
             self.test_file_path = f"{self.test_project_path}/GeneratedTests.cs"
         else:
-            self.test_project_path = "./csharp_projects/BenchmarkTestProject"
-            self.source_project_path = "./csharp_projects/BenchmarkSourceProject"
+            self.test_project_path = f"./csharp_projects/BenchmarkTestProject{self.sandbox_id}"
+            self.source_project_path = f"./csharp_projects/BenchmarkSourceProject{self.sandbox_id}"
             self.source_file_path = f"{self.source_project_path}/SourceCode.cs"
             self.test_file_path = f"{self.test_project_path}/GeneratedTests.cs"
+            
+            # Setup dynamic sandbox by copying template if it doesn't exist
+            if sandbox_id and not Path(self.test_project_path).exists():
+                shutil.copytree("./csharp_projects/BenchmarkTestProject", self.test_project_path, dirs_exist_ok=True)
+                shutil.copytree("./csharp_projects/BenchmarkSourceProject", self.source_project_path, dirs_exist_ok=True)
 
     def inject_source_code(self, source_code: str):
         if self.mode == "github_native":
