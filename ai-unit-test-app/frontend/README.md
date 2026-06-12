@@ -21,7 +21,7 @@ The web application is split into three main modules accessible via the navigati
    - **Pull Request Automation**: Create Git branches, commit unit tests, and open Pull Requests directly from the web interface.
 
 3. **Dynamic Analytical Dashboard (`/dashboard`)**:
-   - **Overview & Charts / Static Summaries**: View comparative graphs and compiled tables compiled by the Python reports compiler. It features sub-tab views for Overall Summary, Category split, Cost Efficiency (including Worker vs. Evaluator cost breakdown), Failure reasons, Self-Healing, Latency, **Evaluator Review** (refinement loops analysis), and **Candidate Selector** (Best-of-N selection details).
+   - **Overview & Charts / Static Summaries**: View comparative graphs and compiled tables compiled by the Python reports compiler. It features sub-tab views for Overall Summary, Category split, Cost Efficiency (including Worker vs. Evaluator cost breakdown), Failure reasons, Self-Healing, Latency, **Evaluator Review** (refinement loops analysis), and **Candidate Selector** (Best-of-N selection details). Features dynamic toggles to switch analysis views between **Conditional** (success-only) and **Effective** (overall) evaluation metrics.
    - **Gold Standard Benchmark Analytics**: Tables showing research-run results mapped with source code and evaluator critiques in details modals.
    - **Playground Logs**: Historical submissions run manually.
    - **GitHub Ingest Logs**: Submissions triggered from remote repositories.
@@ -32,6 +32,10 @@ The web application is split into three main modules accessible via the navigati
    - **Project Generator**: Automatically scans for `.csproj` files linked to target `.cs` files. If a test project doesn't exist, it intelligently scaffolds a new `xUnit` test project on the fly (adding Moq and Coverlet automatically).
    - **Native Execution**: AI-generated tests are injected and executed directly inside the cloned GitHub project rather than a generic sandbox, ensuring real-world compilation and dependency resolution.
    - **Automated Webhook Actions**: Features a dedicated `POST /api/cicd/webhook` for GitHub Actions integration. You can embed the provided `ai-unit-test.yml` into any C# project to trigger AI unit test generation and validation automatically on Pull Requests using the `compiler-guided-multi-agent` workflow.
+
+5. **Dataset Configuration (`/?view=dataset`)**:
+   - **C# Sample Data**: View sample C# source code alongside expected reference tests (`expected_test.cs`) to understand what the AI is tasked to solve.
+   - **JSON Schema Description**: Explore the `metadata.json` structure and variable descriptions used to map and control evaluation criteria within the dataset.
 
 ## Project Setup
 

@@ -380,11 +380,11 @@ public class Calculator {
 
 ## 📊 Evaluation Metrics Details
 
-The framework evaluates AI generated tests using 7 key criteria, now with deep granular logging enabled across all workflows:
+The framework evaluates AI generated tests using 7 key criteria, now with deep granular logging enabled across all workflows. To provide a more accurate evaluation, performance metrics are now separated into **Conditional** (calculated only from successful, passing test runs) and **Effective** (calculated across all benchmark attempts, factoring in the pass rate as a penalty for failures):
 1. **Compilation Success Rate**: Percentage of tests that compile successfully.
 2. **Test Pass Rate**: Percentage of test assertions that succeed under the xUnit runner.
-3. **Line & Branch Coverage**: Code coverage computed dynamically using `Coverlet` (Cobertura reports).
-4. **Assertion Quality**: Graded by the Evaluator Agent (0-100 score) assessing edge cases, mock structure, and assertion depth.
+3. **Line & Branch Coverage (Conditional & Effective)**: Code coverage computed dynamically using `Coverlet` (Cobertura reports).
+4. **Assertion Quality (Conditional & Effective)**: Graded by the Evaluator Agent (0-100 score) assessing edge cases, mock structure, and assertion depth.
 5. **Execution Latency Breakdown**:
    * **Worker Latency (`worker_latency`)**: Total time spent executing Worker LLM calls (generation/healing).
    * **Evaluator Latency (`evaluator_latency`)**: Total time spent executing Evaluator Agent grading.
@@ -393,7 +393,7 @@ The framework evaluates AI generated tests using 7 key criteria, now with deep g
    * **Worker Cost (`worker_cost`, `worker_prompt_tokens`, `worker_completion_tokens`)**: Computational footprints and cost of the worker model.
    * **Evaluator Cost (`evaluator_cost`, `evaluator_prompt_tokens`, `evaluator_completion_tokens`)**: Footprints and cost of the evaluator agent.
    * **Total Cost (`cost`, `prompt_tokens`, `completion_tokens`)**: Consolidated costs and token usage.
-7. **Mutation Score**: Evaluates the strength and fault-detection capabilities of the unit test suite by injecting synthetic faults (mutations) using Stryker.NET. Computes the percentage of mutants successfully killed by the tests (`mutation_score`, `total_mutants`, `killed_mutants`, `survived_mutants`, `ignored_mutants`, `timeout_mutants`).
+7. **Mutation Score (Conditional & Effective)**: Evaluates the strength and fault-detection capabilities of the unit test suite by injecting synthetic faults (mutations) using Stryker.NET. Computes the percentage of mutants successfully killed by the tests (`mutation_score`, `total_mutants`, `killed_mutants`, `survived_mutants`, `ignored_mutants`, `timeout_mutants`).
 
 ### 🔄 Initial State & Iteration Logging
 To support advanced telemetry, the framework tracks:

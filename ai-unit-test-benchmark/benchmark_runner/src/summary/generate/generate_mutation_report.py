@@ -78,21 +78,31 @@ def generate_mutation_report():
                     continue
 
                 runs_mut = stats["runs_with_mutation"]
+                pass_rate = round((runs_mut / total) * 100, 2) if total > 0 else 0.0
+
                 if runs_mut > 0:
-                    avg_score = round(sum(stats["mutation_scores"]) / runs_mut, 2)
-                    avg_total = round(sum(stats["total_mutants"]) / runs_mut, 2)
-                    avg_killed = round(sum(stats["killed_mutants"]) / runs_mut, 2)
-                    avg_survived = round(sum(stats["survived_mutants"]) / runs_mut, 2)
-                    avg_ignored = round(sum(stats["ignored_mutants"]) / runs_mut, 2)
-                    avg_timeout = round(sum(stats["timeout_mutants"]) / runs_mut, 2)
-                    
                     sum_total = sum(stats["total_mutants"])
                     sum_killed = sum(stats["killed_mutants"])
                     sum_survived = sum(stats["survived_mutants"])
                     sum_ignored = sum(stats["ignored_mutants"])
                     sum_timeout = sum(stats["timeout_mutants"])
+
+                    active_mutants = sum_total - sum_ignored
+                    if active_mutants > 0:
+                        cond_score = round(((sum_killed + sum_timeout) / active_mutants) * 100, 2)
+                    else:
+                        cond_score = 0.0
+                    
+                    eff_score = round((pass_rate / 100) * cond_score, 2)
+
+                    avg_total = round(sum_total / runs_mut, 2)
+                    avg_killed = round(sum_killed / runs_mut, 2)
+                    avg_survived = round(sum_survived / runs_mut, 2)
+                    avg_ignored = round(sum_ignored / runs_mut, 2)
+                    avg_timeout = round(sum_timeout / runs_mut, 2)
                 else:
-                    avg_score = None
+                    cond_score = None
+                    eff_score = None
                     avg_total = None
                     avg_killed = None
                     avg_survived = None
@@ -109,7 +119,8 @@ def generate_mutation_report():
                     "model": model_name,
                     "total_runs": total,
                     "runs_with_mutation": runs_mut,
-                    "avg_mutation_score": avg_score,
+                    "conditional_mutation_score": cond_score,
+                    "effective_mutation_score": eff_score,
                     "avg_total_mutants": avg_total,
                     "avg_killed_mutants": avg_killed,
                     "avg_survived_mutants": avg_survived,
@@ -135,12 +146,13 @@ def generate_mutation_report():
                 writer.writerows(final_summary)
 
             markdown = (
-                "| Model | Total Runs | Runs w/ Mutation | Avg Mutation Score | Avg Total Mutants | "
+                "| Model | Total Runs | Runs w/ Mutation | Cond Mut Score | Eff Mut Score | Avg Total Mutants | "
                 "Avg Killed | Avg Survived | Avg Ignored | Avg Timeout | Total Mutants | Total Killed |\n"
-                "|---|---|---|---|---|---|---|---|---|---|---|\n"
+                "|---|---|---|---|---|---|---|---|---|---|---|---|\n"
             )
             for row in final_summary:
-                score_str = f"{row['avg_mutation_score']}%" if row['avg_mutation_score'] is not None else "N/A"
+                cond_score_str = f"{row['conditional_mutation_score']}%" if row['conditional_mutation_score'] is not None else "N/A"
+                eff_score_str = f"{row['effective_mutation_score']}%" if row['effective_mutation_score'] is not None else "N/A"
                 avg_tot = f"{row['avg_total_mutants']}" if row['avg_total_mutants'] is not None else "N/A"
                 avg_kil = f"{row['avg_killed_mutants']}" if row['avg_killed_mutants'] is not None else "N/A"
                 avg_sur = f"{row['avg_survived_mutants']}" if row['avg_survived_mutants'] is not None else "N/A"
@@ -148,7 +160,7 @@ def generate_mutation_report():
                 avg_to = f"{row['avg_timeout_mutants']}" if row['avg_timeout_mutants'] is not None else "N/A"
 
                 markdown += (
-                    f"| {row['model']} | {row['total_runs']} | {row['runs_with_mutation']} | {score_str} "
+                    f"| {row['model']} | {row['total_runs']} | {row['runs_with_mutation']} | {cond_score_str} | {eff_score_str} "
                     f"| {avg_tot} | {avg_kil} | {avg_sur} | {avg_ign} | {avg_to} "
                     f"| {row['total_mutants_count']} | {row['total_killed_mutants']} |\n"
                 )

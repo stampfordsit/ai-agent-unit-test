@@ -368,7 +368,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [showTelemetry, setShowTelemetry] = useState(true);
 
-  const [workspaceMode, setWorkspaceMode] = useState<'manual' | 'github' | 'workflow' | 'params'>('manual');
+  const [workspaceMode, setWorkspaceMode] = useState<'manual' | 'github' | 'workflow' | 'params' | 'dataset'>('manual');
+  const [datasetSubTab, setDatasetSubTab] = useState<'csharp' | 'json'>('csharp');
   const [workflowSubTab, setWorkflowSubTab] = useState<'orchestration' | 'pipelines'>('orchestration');
   const [paramsSubTab, setParamsSubTab] = useState<'parameters' | 'summary'>('parameters');
   const [summaryReportTab, setSummaryReportTab] = useState<'overall' | 'category' | 'split' | 'cost' | 'failure' | 'healing' | 'latency' | 'evaluator' | 'selector' | 'mutation'>('overall');
@@ -497,6 +498,8 @@ export default function Home() {
           setWorkspaceMode('workflow');
         } else if (view === 'params') {
           setWorkspaceMode('params');
+        } else if (view === 'dataset') {
+          setWorkspaceMode('dataset');
         }
       }, 0);
     }
@@ -597,6 +600,28 @@ export default function Home() {
           </button>
           <button
             onClick={() => {
+              setWorkspaceMode('dataset');
+              setResult(null);
+              setError(null);
+              setPrResultUrl('');
+              setPrError(null);
+              setSelectedMethodName('');
+              window.history.pushState({}, '', '/?view=dataset');
+            }}
+            className={`nav-link ${workspaceMode === 'dataset' ? 'active' : ''}`}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              padding: '0.25rem 0.5rem',
+              fontFamily: 'inherit'
+            }}
+          >
+            Dataset
+          </button>
+          <button
+            onClick={() => {
               setWorkspaceMode('manual');
               setResult(null);
               setError(null);
@@ -664,8 +689,118 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* Main Layout or System Workflow / Params View */}
-      {workspaceMode === 'workflow' ? (
+      {/* Main Layout or System Workflow / Params / Dataset View */}
+      {workspaceMode === 'dataset' ? (
+        <section className="panel" style={{ width: '100%', maxWidth: '100%', gap: '1.5rem', minWidth: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '1rem', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <h2 className="panel-title" style={{ fontSize: '1.35rem' }}>Dataset Configuration</h2>
+            <div style={{ display: 'flex', gap: '0.75rem', background: 'rgba(0,0,0,0.2)', padding: '0.25rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <button
+                className={`tab-btn ${datasetSubTab === 'csharp' ? 'active' : ''}`}
+                onClick={() => setDatasetSubTab('csharp')}
+                style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem', borderBottom: 'none' }}
+              >
+                ตัวอย่างข้อมูล C#
+              </button>
+              <button
+                className={`tab-btn ${datasetSubTab === 'json' ? 'active' : ''}`}
+                onClick={() => setDatasetSubTab('json')}
+                style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem', borderBottom: 'none' }}
+              >
+                คำอธิบาย JSON
+              </button>
+            </div>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {datasetSubTab === 'csharp' ? (
+              <>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6', margin: 0 }}>
+                  หน้านี้แสดงตัวอย่างซอร์สโค้ดภาษา C# ที่เป็นโจทย์สำหรับให้ AI เขียน Unit Test พร้อมกับโค้ดเฉลยอ้างอิง (Expected Test)
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
+                  <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '1.5rem' }}>
+                    <h3 style={{ fontSize: '1rem', color: '#a5b4fc', marginBottom: '1rem' }}>ตัวอย่าง Source Code (source.cs)</h3>
+                    <pre style={{ margin: 0, padding: '1rem', background: '#0f172a', borderRadius: '8px', fontSize: '0.85rem', color: '#cbd5e1', overflowX: 'auto', border: '1px solid rgba(255,255,255,0.05)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'monospace' }}>
+{`public class Calculator
+{
+    public int Add(int a, int b)
+    {
+        return a + b;
+    }
+}`}
+                    </pre>
+                  </div>
+                  <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '1.5rem' }}>
+                    <h3 style={{ fontSize: '1rem', color: '#34d399', marginBottom: '1rem' }}>ตัวอย่าง Expected Test (expected_test.cs)</h3>
+                    <pre style={{ margin: 0, padding: '1rem', background: '#0f172a', borderRadius: '8px', fontSize: '0.85rem', color: '#cbd5e1', overflowX: 'auto', border: '1px solid rgba(255,255,255,0.05)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'monospace' }}>
+{`public class CalculatorTests
+{
+    [Fact]
+    public void Add_ShouldReturnCorrectResult()
+    {
+        var calculator = new Calculator();
+        
+        var result = calculator.Add(2, 3);
+        
+        Assert.Equal(5, result);
+    }
+}`}
+                    </pre>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6', margin: 0 }}>
+                  หน้านี้แสดงตัวอย่างโครงสร้างข้อมูล (JSON) ของชุดทดสอบใน Dataset แต่ละข้อ พร้อมคำอธิบายความหมายของตัวแปรต่างๆ เพื่อให้เข้าใจโครงสร้างและเงื่อนไขของการทดสอบโมเดลมากขึ้น
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
+                  <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '1.5rem' }}>
+                    <h3 style={{ fontSize: '1rem', color: '#a5b4fc', marginBottom: '1rem' }}>ตัวอย่างข้อมูล metadata.json</h3>
+                    <pre style={{ margin: 0, padding: '1rem', background: '#0f172a', borderRadius: '8px', fontSize: '0.8rem', color: '#cbd5e1', overflowX: 'auto', border: '1px solid rgba(255,255,255,0.05)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+{`{
+  "id": "CSHARP-BENCH-197",
+  "category": "simple",
+  "difficulty": "easy",
+  "requires_mock": false,
+  "requires_async": false,
+  "branch_count": 0,
+  "expected_assertion_count": 1,
+  "source": "custom",
+  "tags": [],
+  "repository": "",
+  "is_executable_reference": true
+}`}
+                    </pre>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <h3 style={{ fontSize: '1rem', color: '#6ee7b7', marginBottom: '0.5rem' }}>คำอธิบายตัวแปร (Variables Description)</h3>
+                    {[
+                      { field: 'id', desc: 'รหัสประจำตัวอย่างข้อมูล (Unique Identifier)' },
+                      { field: 'category', desc: 'หมวดหมู่ของข้อมูล เช่น simple, business, edge_case, ฯลฯ' },
+                      { field: 'difficulty', desc: 'ระดับความยากของโค้ดที่ใช้ทดสอบ (easy, medium, hard)' },
+                      { field: 'requires_mock', desc: 'ระบุว่าต้องใช้ Mock Object (เช่น Moq) ในการเขียนเทสหรือไม่ (true / false)' },
+                      { field: 'requires_async', desc: 'ระบุว่าโค้ดหลักมีการทำงานแบบ Asynchronous (Task) หรือไม่ (true / false)' },
+                      { field: 'branch_count', desc: 'จำนวนกิ่งสาขา (Branch) ภายในโค้ดเพื่อบอกความซับซ้อน (Cyclomatic Complexity)' },
+                      { field: 'expected_assertion_count', desc: 'จำนวน Assertion ที่ควรมีใน Unit Test ขั้นต่ำเพื่อครอบคลุมการทดสอบ' },
+                      { field: 'source', desc: 'แหล่งที่มาของข้อมูล เช่น เขียนขึ้นเอง (custom) หรือจากโปรเจกต์โอเพนซอร์ส' },
+                      { field: 'tags', desc: 'ป้ายกำกับเพิ่มเติมที่เกี่ยวข้องกับคุณสมบัติทางเทคนิคของโค้ด' },
+                      { field: 'repository', desc: 'URL หรือชื่อ Repository ของแหล่งที่มาของโค้ด (ถ้ามี)' },
+                      { field: 'is_executable_reference', desc: 'ระบุว่ามีโค้ดเฉลย (Reference Test) ที่สามารถรันผ่านได้จริงเตรียมไว้ให้ในชุดข้อมูลหรือไม่' }
+                    ].map((item, idx) => (
+                      <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', paddingBottom: '0.5rem', borderBottom: '1px dashed rgba(255,255,255,0.05)' }}>
+                        <code style={{ fontSize: '0.8rem', color: '#f8fafc', fontWeight: 600 }}>{item.field}</code>
+                        <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{item.desc}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+      ) : workspaceMode === 'workflow' ? (
         <section className="panel" style={{ width: '100%', maxWidth: '100%', gap: '1.5rem', minWidth: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '1rem', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '1rem' }}>
             <h2 className="panel-title" style={{ fontSize: '1.35rem' }}>System Workflows &amp; Pipelines</h2>
@@ -1498,10 +1633,14 @@ export default function Home() {
                       {[
                         { field: 'model', type: 'string', desc: 'ชื่อของ AI Model หรือโมเดลจำลองที่นำมาประเมินผลเชิงเปรียบเทียบในการทดลอง', example: '"gpt-4.1-mini", "DeepSeek-V3", "Llama_3_3_70B_Instruct"' },
                         { field: 'pass_rate', type: 'number (0-100)', desc: 'อัตราส่วนการทำงานสำเร็จ (Pass Rate %) คำนวณจากเปอร์เซ็นต์ของจำนวนข้อสอบทั้งหมดใน Dataset ที่ชุดทดสอบของโมเดลสามารถคอมไพล์ผ่านและรันผ่านครบถ้วนไม่มีข้อผิดพลาด', example: '95.51' },
-                        { field: 'avg_line_coverage', type: 'number (0-100)', desc: 'ค่าเฉลี่ยเปอร์เซ็นต์ความครอบคลุมบรรทัดคำสั่งโค้ด (Line Coverage) ในคลาสที่ถูกทดสอบจริงหลังจากรันการทดสอบใน Sandbox', example: '98.32' },
-                        { field: 'avg_branch_coverage', type: 'number (0-100)', desc: 'ค่าเฉลี่ยเปอร์เซ็นต์ความครอบคลุมกิ่งเงื่อนไขหรือทางเลือกการตัดสินใจตรรกะ (Branch Coverage) ในคลาสเป้าหมายทั้งหมด', example: '88.15' },
-                        { field: 'avg_mutation_score', type: 'number (0-100) / null', desc: 'ค่าเฉลี่ยคะแนน Mutation Score (%) ที่คำนวณจากอัตราส่วนของ Mutants ที่ถูกกำจัด (Killed) หรือหมดเวลา (Timeout) ต่อจำนวน Mutants ที่เกิดขึ้นทั้งหมด โดยวิเคราะห์และดำเนินการผ่าน Stryker.NET (มีค่าเฉพาะรอบการทำงานที่เปิดใช้งาน Mutation Testing)', example: '85.71' },
-                        { field: 'avg_evaluator_score', type: 'number (0-100)', desc: 'ค่าเฉลี่ยคะแนนเชิงคุณภาพและความรัดกุมในการเขียนเคสทดสอบ (Grader Score) ประเมินความถูกต้องโดย Evaluator Agent (GPT-4)', example: '92.40' },
+                        { field: 'conditional_line_coverage', type: 'number (0-100)', desc: 'เปอร์เซ็นต์ความครอบคลุมบรรทัดคำสั่งโค้ดเฉลี่ย (Line Coverage) ในคลาสเฉพาะข้อที่ทดสอบสำเร็จ', example: '98.32' },
+                        { field: 'effective_line_coverage', type: 'number (0-100)', desc: 'เปอร์เซ็นต์ความครอบคลุมบรรทัดคำสั่งโค้ดเฉลี่ย (Line Coverage) รวมจากข้อสอบทั้งหมด (สะท้อนประสิทธิภาพจริง)', example: '95.32' },
+                        { field: 'conditional_branch_coverage', type: 'number (0-100)', desc: 'เปอร์เซ็นต์ความครอบคลุมกิ่งเงื่อนไขตรรกะเฉลี่ย (Branch Coverage) ในคลาสเฉพาะข้อที่ทดสอบสำเร็จ', example: '88.15' },
+                        { field: 'effective_branch_coverage', type: 'number (0-100)', desc: 'เปอร์เซ็นต์ความครอบคลุมกิ่งเงื่อนไขตรรกะเฉลี่ย (Branch Coverage) รวมจากข้อสอบทั้งหมด', example: '85.15' },
+                        { field: 'conditional_mutation_score', type: 'number (0-100) / null', desc: 'คะแนน Mutation Score (%) เฉลี่ยเฉพาะข้อที่รันการทดสอบผ่าน (คำนวณผ่าน Stryker.NET)', example: '85.71' },
+                        { field: 'effective_mutation_score', type: 'number (0-100) / null', desc: 'คะแนน Mutation Score (%) เฉลี่ยถ่วงน้ำหนักด้วย Pass Rate (สะท้อนคะแนนรวมทั่วทั้ง Dataset)', example: '80.71' },
+                        { field: 'conditional_evaluator_score', type: 'number (0-100)', desc: 'คะแนนเชิงคุณภาพการเขียนเคสทดสอบ (Grader Score) โดย Evaluator Agent เฉพาะข้อที่รันผ่าน', example: '92.40' },
+                        { field: 'effective_evaluator_score', type: 'number (0-100)', desc: 'คะแนนเชิงคุณภาพเฉลี่ย (Grader Score) จากข้อสอบทั้งหมด', example: '90.00' },
                         { field: 'avg_healing_attempts', type: 'number (0-3)', desc: 'ค่าเฉลี่ยจำนวนครั้งของการวิ่งกระบวนการแก้ไขเยียวยาข้อผิดพลาด (Self-Healing Loop) เพื่อซ่อมแซมโค้ดที่คอมไพล์พังให้กลับมาใช้งานได้จริง', example: '0.45' },
                         { field: 'avg_generation_time', type: 'number (seconds)', desc: 'ค่าเฉลี่ยเวลารวม (Latency) ที่ใช้ในการประมวลผลสร้างและรันคำสั่งทดสอบจริงต่อ 1 ตัวอย่าง', example: '12.45' },
                         { field: 'avg_cost', type: 'number (USD)', desc: 'ค่าใช้จ่าย API Token เฉลี่ยต่อ 1 ตัวอย่างทดสอบ (Input/Output สะสมรวมทุกเอเจนต์ย่อย)', example: '0.000412' },
@@ -1541,7 +1680,8 @@ export default function Home() {
                         { field: 'category', type: 'string', desc: 'หมวดหมู่ทางเทคนิคหรือคุณลักษณะของโค้ด C# ที่นำมาทดสอบ เช่น async, collections, generics, linq, math, string เป็นต้น', example: '"async", "collections", "generics"' },
                         { field: 'model', type: 'string', desc: 'ชื่อของ AI Model ที่ได้รับการประเมินในหมวดหมู่ข้อมูลนี้', example: '"DeepSeek_V3_2", "gpt_4_1_mini"' },
                         { field: 'pass_rate', type: 'number (0-100)', desc: 'อัตราการทำผ่านของชุดทดสอบ (Pass Rate %) เฉพาะสำหรับตัวอย่างทดสอบที่อยู่ในหมวดหมู่นี้', example: '85.0' },
-                        { field: 'avg_line_coverage', type: 'number (0-100)', desc: 'ค่าเฉลี่ยเปอร์เซ็นต์ความครอบคลุมบรรทัดคำสั่งโค้ด (Line Coverage %) ในคลาสเป้าหมายสำหรับหมวดหมู่นี้', example: '78.50' }
+                        { field: 'conditional_line_coverage', type: 'number (0-100)', desc: 'เปอร์เซ็นต์ Line Coverage เฉลี่ยเฉพาะตัวอย่างในหมวดหมู่นี้ที่ทำสำเร็จ', example: '78.50' },
+                        { field: 'effective_line_coverage', type: 'number (0-100)', desc: 'เปอร์เซ็นต์ Line Coverage เฉลี่ยจากทุกตัวอย่างในหมวดหมู่นี้', example: '70.50' }
                       ].map((p) => (
                         <div key={p.field} style={{ background: 'rgba(52,211,153,0.02)', border: '1px solid rgba(52,211,153,0.1)', borderRadius: '10px', padding: '1rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
@@ -1569,8 +1709,10 @@ export default function Home() {
                         { field: 'total', type: 'number', desc: 'จำนวนตัวอย่างทดสอบทั้งหมด (Benchmark samples) ที่จัดอยู่ในกลุ่มย่อยนี้', example: '89' },
                         { field: 'category', type: 'string', desc: 'ประเภทกลุ่มชุดข้อมูลที่ถูกแยกวิเคราะห์ ได้แก่ synthetic (ข้อมูลสังเคราะห์เชิงทฤษฎี) หรือ real_world (ข้อมูลโค้ดจากโปรเจกต์ใช้งานจริง)', example: '"synthetic", "real_world"' },
                         { field: 'pass_rate_pct', type: 'number (0-100)', desc: 'อัตราส่วนรันผ่าน Sandbox (%) เฉพาะของกลุ่มข้อมูลย่อยนี้', example: '57.30' },
-                        { field: 'avg_line_coverage_pct', type: 'number (0-100)', desc: 'เปอร์เซ็นต์ความครอบคลุมของบรรทัดโค้ดเฉลี่ยสำหรับกลุ่มข้อมูลนี้', example: '56.18' },
-                        { field: 'avg_branch_coverage_pct', type: 'number (0-100)', desc: 'เปอร์เซ็นต์ความครอบคลุมของกิ่งเงื่อนไขตรรกะเฉลี่ยสำหรับกลุ่มข้อมูลนี้', example: '56.18' },
+                        { field: 'conditional_line_coverage_pct', type: 'number (0-100)', desc: 'เปอร์เซ็นต์ความครอบคลุมบรรทัดโค้ดเฉลี่ยเฉพาะชุดทดสอบที่ผ่าน', example: '56.18' },
+                        { field: 'effective_line_coverage_pct', type: 'number (0-100)', desc: 'เปอร์เซ็นต์ความครอบคลุมบรรทัดโค้ดเฉลี่ยของกลุ่มข้อมูลนี้ทั้งหมด', example: '50.18' },
+                        { field: 'conditional_branch_coverage_pct', type: 'number (0-100)', desc: 'เปอร์เซ็นต์ความครอบคลุมกิ่งเงื่อนไขเฉลี่ยเฉพาะชุดทดสอบที่ผ่าน', example: '56.18' },
+                        { field: 'effective_branch_coverage_pct', type: 'number (0-100)', desc: 'เปอร์เซ็นต์ความครอบคลุมกิ่งเงื่อนไขเฉลี่ยของกลุ่มข้อมูลนี้ทั้งหมด', example: '50.18' },
                         { field: 'avg_evaluator_score', type: 'number (0-100)', desc: 'ค่าเฉลี่ยคะแนนเชิงคุณภาพ (Semantic Score) ที่ได้รับจาก Grader Agent ในกลุ่มนี้', example: '75.0' },
                         { field: 'max_evaluator_score', type: 'number (0-100)', desc: 'คะแนน Grader Score สูงสุดที่โมเดลนี้ทำได้ในกลุ่มข้อมูลนี้', example: '100' },
                         { field: 'min_evaluator_score', type: 'number (0-100)', desc: 'คะแนน Grader Score ต่ำสุดที่โมเดลนี้ได้รับในกลุ่มข้อมูลนี้', example: '30' },
@@ -1761,7 +1903,8 @@ export default function Home() {
                         { field: 'model', type: 'string', desc: 'ชื่อของ AI Model ที่เข้าทดสอบ', example: '"gptmini", "deepseekv3"' },
                         { field: 'total_runs', type: 'number', desc: 'จำนวนรอบรันการทดสอบ Unit Test ทั้งหมดของ Dataset', example: '89' },
                         { field: 'runs_with_mutation', type: 'number', desc: 'จำนวนรอบรันที่ทำงานร่วมกับการตรวจวิเคราะห์ Mutation Testing สำเร็จ', example: '88' },
-                        { field: 'avg_mutation_score', type: 'number (0-100) / null', desc: 'ค่าเฉลี่ยคะแนน Mutation Score (%) ที่ประเมินโดย Stryker.NET (สัดส่วนของ Mutants ที่ถูก Killed/Timeout ต่อ active mutants)', example: '85.71' },
+                        { field: 'conditional_mutation_score', type: 'number (0-100) / null', desc: 'คะแนน Mutation Score เฉลี่ยเฉพาะข้อสอบที่รันผ่าน', example: '85.71' },
+                        { field: 'effective_mutation_score', type: 'number (0-100) / null', desc: 'คะแนน Mutation Score เฉลี่ยโดยรวมเทียบกับข้อสอบทั้งหมด', example: '80.71' },
                         { field: 'avg_total_mutants', type: 'number', desc: 'ค่าเฉลี่ยจำนวน Mutants ทั้งหมดที่เกิดขึ้นในแต่ละรอบทดสอบ', example: '25.40' },
                         { field: 'avg_killed_mutants', type: 'number', desc: 'ค่าเฉลี่ยจำนวน Mutants ที่ถูกชุดทดสอบฆ่าตาย (Killed) ในแต่ละรอบ', example: '20.10' },
                         { field: 'avg_survived_mutants', type: 'number', desc: 'ค่าเฉลี่ยจำนวน Mutants ที่มีชีวิตรอด (Survived - ชุดทดสอบครอบคลุมไม่ถึงหรือขาด Assertion)', example: '3.40' },

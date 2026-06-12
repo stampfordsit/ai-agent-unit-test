@@ -197,6 +197,7 @@ export default function Dashboard() {
   } | null>(null);
   const [loadingStatic, setLoadingStatic] = useState(false);
   const [staticSubTab, setStaticSubTab] = useState<'charts' | 'overall' | 'category' | 'cost' | 'failure' | 'healing' | 'latency' | 'split' | 'evaluator' | 'selector' | 'mutation'>('charts');
+  const [chartMetricType, setChartMetricType] = useState<'conditional' | 'effective'>('effective');
 
   // Filters state
   const [selectedVersion, setSelectedVersion] = useState<string>('all');
@@ -410,6 +411,16 @@ export default function Dashboard() {
             }}
           >
             Report Parameters
+          </a>
+          <a
+            href="/?view=dataset"
+            className="nav-link"
+            style={{
+              fontSize: '0.9rem',
+              padding: '0.25rem 0.5rem'
+            }}
+          >
+            Dataset
           </a>
           <a
             href="/?view=playground"
@@ -1306,8 +1317,10 @@ export default function Dashboard() {
                       {/* Metric cards */}
                       {(() => {
                         const totalDatasetSamples = staticSummary.healingSummary?.[0]?.total_runs || 89;
-                        const maxPassRate = staticSummary.benchmarkSummary ? Math.max(...staticSummary.benchmarkSummary.map(m => m.pass_rate)) : 0;
-                        const maxScore = staticSummary.benchmarkSummary ? Math.max(...staticSummary.benchmarkSummary.map(m => m.avg_evaluator_score)) : 0;
+                        const passRates = staticSummary.benchmarkSummary ? staticSummary.benchmarkSummary.map(m => m.pass_rate || 0) : [];
+                        const maxPassRate = passRates.length > 0 ? Math.max(...passRates) : 0;
+                        const scores = staticSummary.benchmarkSummary ? staticSummary.benchmarkSummary.map(m => chartMetricType === 'conditional' ? (m.conditional_evaluator_score || 0) : (m.effective_evaluator_score || 0)) : [];
+                        const maxScore = scores.length > 0 ? Math.max(...scores) : 0;
                         return (
                           <div className="dashboard-grid-5">
                             <div className="metric-card border-indigo-500/10 bg-indigo-950/5">
@@ -1339,9 +1352,27 @@ export default function Dashboard() {
                         <div className="flex flex-col gap-6">
                           <div className="chart-container">
                             <div className="chart-card">
-                              <h3 className="chart-title">Model Performance (Pass Rate &amp; Coverage)</h3>
-                              <p className="text-xs text-slate-500 mb-2">Compares average pass rate, line coverage, and branch coverage for each model under active filters</p>
-                              <StaticModelChart data={staticSummary.benchmarkSummary} />
+                              <div className="flex justify-between items-start mb-2">
+                                <div>
+                                  <h3 className="chart-title">Model Performance (Pass Rate &amp; Coverage)</h3>
+                                  <p className="text-xs text-slate-500">Compares average pass rate, line coverage, and branch coverage for each model under active filters</p>
+                                </div>
+                                <div className="flex gap-1 bg-slate-900/50 p-1 rounded-md border border-white/5">
+                                  <button
+                                    onClick={() => setChartMetricType('conditional')}
+                                    className={`px-3 py-1 text-[10px] font-bold rounded transition-colors ${chartMetricType === 'conditional' ? 'bg-indigo-500 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                                  >
+                                    CONDITIONAL
+                                  </button>
+                                  <button
+                                    onClick={() => setChartMetricType('effective')}
+                                    className={`px-3 py-1 text-[10px] font-bold rounded transition-colors ${chartMetricType === 'effective' ? 'bg-indigo-500 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                                  >
+                                    EFFECTIVE
+                                  </button>
+                                </div>
+                              </div>
+                              <StaticModelChart data={staticSummary.benchmarkSummary} metricType={chartMetricType} />
                             </div>
 
                             <div className="chart-card flex flex-col justify-between">
@@ -1449,10 +1480,10 @@ export default function Dashboard() {
                               <tr>
                                 <th>AI Model</th>
                                 <th>Pass Rate</th>
-                                <th>Avg Line Coverage</th>
-                                <th>Avg Branch Coverage</th>
-                                <th>Avg Mutation Score</th>
-                                <th>Avg Grader Score</th>
+                                <th>Line Coverage (Cond/Eff)</th>
+                                <th>Branch Coverage (Cond/Eff)</th>
+                                <th>Mutation Score (Cond/Eff)</th>
+                                <th>Grader Score (Cond/Eff)</th>
                                 <th>Avg Healing Attempts</th>
                                 <th>Avg Generation Time</th>
                                 <th>Avg Cost</th>
@@ -1464,12 +1495,18 @@ export default function Dashboard() {
                                 <tr key={idx}>
                                   <td className="font-semibold text-slate-200">{row.model}</td>
                                   <td className="font-bold text-emerald-400">{row.pass_rate}%</td>
-                                  <td className="font-semibold text-sky-400">{row.avg_line_coverage}%</td>
-                                  <td className="font-semibold text-indigo-400">{row.avg_branch_coverage}%</td>
-                                  <td className="font-semibold text-pink-400">
-                                    {row.avg_mutation_score != null ? `${row.avg_mutation_score}%` : 'N/A'}
+                                  <td className="font-semibold text-sky-400 text-xs">
+                                    <span title="Conditional Line Coverage">{row.conditional_line_coverage}%</span> <span className="text-slate-500">/</span> <span className="text-sky-200" title="Effective Line Coverage">{row.effective_line_coverage}%</span>
                                   </td>
-                                  <td className="font-bold text-purple-400">{row.avg_evaluator_score}/100</td>
+                                  <td className="font-semibold text-indigo-400 text-xs">
+                                    <span title="Conditional Branch Coverage">{row.conditional_branch_coverage}%</span> <span className="text-slate-500">/</span> <span className="text-indigo-200" title="Effective Branch Coverage">{row.effective_branch_coverage}%</span>
+                                  </td>
+                                  <td className="font-semibold text-pink-400 text-xs">
+                                    <span title="Conditional Mutation Score">{row.conditional_mutation_score != null ? `${row.conditional_mutation_score}%` : 'N/A'}</span> <span className="text-slate-500">/</span> <span className="text-pink-200" title="Effective Mutation Score">{row.effective_mutation_score != null ? `${row.effective_mutation_score}%` : 'N/A'}</span>
+                                  </td>
+                                  <td className="font-bold text-purple-400 text-xs">
+                                    <span title="Conditional Grader Score">{row.conditional_evaluator_score}</span> <span className="text-slate-500">/</span> <span className="text-purple-200" title="Effective Grader Score">{row.effective_evaluator_score}</span>
+                                  </td>
                                   <td className="text-slate-300">{row.avg_healing_attempts}</td>
                                   <td className="text-slate-300">{row.avg_generation_time}s</td>
                                   <td className="text-slate-400 text-xs">${row.avg_cost.toFixed(6)}</td>
@@ -1506,7 +1543,7 @@ export default function Dashboard() {
                                 <th>Category</th>
                                 <th>AI Model</th>
                                 <th>Pass Rate</th>
-                                <th>Avg Line Coverage</th>
+                                <th>Line Coverage (Cond/Eff)</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1515,7 +1552,9 @@ export default function Dashboard() {
                                   <td className="font-mono text-indigo-300 font-bold">{row.category}</td>
                                   <td className="font-semibold text-slate-200">{row.model}</td>
                                   <td className="font-bold text-emerald-400">{row.pass_rate}%</td>
-                                  <td className="font-semibold text-sky-400">{row.avg_line_coverage}%</td>
+                                  <td className="font-semibold text-sky-400 text-xs">
+                                    <span title="Conditional">{row.conditional_line_coverage}%</span> <span className="text-slate-500">/</span> <span className="text-sky-200" title="Effective">{row.effective_line_coverage}%</span>
+                                  </td>
                                 </tr>
                               ))}
                             </tbody>
@@ -1561,12 +1600,16 @@ export default function Dashboard() {
                                       <span className="font-bold text-emerald-400">{modelSplit.synthetic.pass_rate_pct}%</span>
                                     </div>
                                     <div className="flex justify-between border-b border-white/5 py-1">
-                                      <span className="text-slate-400">Avg Line Coverage:</span>
-                                      <span className="font-semibold text-sky-400">{modelSplit.synthetic.avg_line_coverage_pct}%</span>
+                                      <span className="text-slate-400">Line Coverage (Cond/Eff):</span>
+                                      <span className="font-semibold text-sky-400 text-xs">
+                                        {modelSplit.synthetic.conditional_line_coverage_pct}% <span className="text-slate-500">/</span> <span className="text-sky-200">{modelSplit.synthetic.effective_line_coverage_pct}%</span>
+                                      </span>
                                     </div>
                                     <div className="flex justify-between border-b border-white/5 py-1">
-                                      <span className="text-slate-400">Avg Branch Coverage:</span>
-                                      <span className="font-semibold text-indigo-400">{modelSplit.synthetic.avg_branch_coverage_pct}%</span>
+                                      <span className="text-slate-400">Branch Coverage (Cond/Eff):</span>
+                                      <span className="font-semibold text-indigo-400 text-xs">
+                                        {modelSplit.synthetic.conditional_branch_coverage_pct}% <span className="text-slate-500">/</span> <span className="text-indigo-200">{modelSplit.synthetic.effective_branch_coverage_pct}%</span>
+                                      </span>
                                     </div>
                                     <div className="flex justify-between border-b border-white/5 py-1">
                                       <span className="text-slate-400">Avg Grader Score:</span>
@@ -1928,7 +1971,7 @@ export default function Dashboard() {
                                   {staticSummary.mutationSummary.map((d: any, i: number) => {
                                     const barWidth = 36;
                                     const groupX = 60 + i * (barWidth + 50) + 20;
-                                    const mutScore = Number(d.avg_mutation_score) || 0;
+                                    const mutScore = Number(chartMetricType === 'conditional' ? d.conditional_mutation_score : d.effective_mutation_score) || 0;
                                     const yMut = 220 - (mutScore / 100) * 220 + 25;
                                     return (
                                       <g key={d.model}>
@@ -1950,7 +1993,7 @@ export default function Dashboard() {
                                 <th>AI Model</th>
                                 <th>Total Runs</th>
                                 <th>Runs w/ Mutation</th>
-                                <th>Avg Mutation Score</th>
+                                <th>Avg Mutation Score (Cond/Eff)</th>
                                 <th>Avg Total Mutants</th>
                                 <th>Avg Killed</th>
                                 <th>Avg Survived</th>
@@ -1967,7 +2010,7 @@ export default function Dashboard() {
                                   <td className="text-slate-300">{row.total_runs}</td>
                                   <td className="text-slate-300">{row.runs_with_mutation}</td>
                                   <td className="text-pink-400 font-bold">
-                                    {row.avg_mutation_score != null ? `${row.avg_mutation_score}%` : 'N/A'}
+                                    <span title="Conditional">{row.conditional_mutation_score != null ? `${row.conditional_mutation_score}%` : 'N/A'}</span> <span className="text-slate-500">/</span> <span className="text-pink-200" title="Effective">{row.effective_mutation_score != null ? `${row.effective_mutation_score}%` : 'N/A'}</span>
                                   </td>
                                   <td className="text-slate-400">{row.avg_total_mutants != null ? row.avg_total_mutants : 'N/A'}</td>
                                   <td className="text-emerald-400 font-semibold">{row.avg_killed_mutants != null ? row.avg_killed_mutants : 'N/A'}</td>
@@ -3486,12 +3529,12 @@ const WorkflowComparisonChart = ({ data }: { data: any[] }) => {
 };
 
 // Static Compiled Model Comparison SVG bar chart
-const StaticModelChart = ({ data }: { data: any[] }) => {
+const StaticModelChart = ({ data, metricType = 'effective' }: { data: any[], metricType?: 'conditional' | 'effective' }) => {
   const chartData = data.map((row) => ({
     model: row.model.replace(/_/g, ' ').replace('Instruct', '').trim(),
     passRate: row.pass_rate,
-    lineCoverage: row.avg_line_coverage,
-    branchCoverage: row.avg_branch_coverage
+    lineCoverage: metricType === 'conditional' ? row.conditional_line_coverage : row.effective_line_coverage,
+    branchCoverage: metricType === 'conditional' ? row.conditional_branch_coverage : row.effective_branch_coverage
   }));
 
   const height = 240;

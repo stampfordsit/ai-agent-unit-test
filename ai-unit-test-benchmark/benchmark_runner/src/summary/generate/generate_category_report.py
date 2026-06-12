@@ -98,14 +98,19 @@ def generate_category_report():
                     total = summary["total"]
                     if total == 0:
                         continue
-                    pass_rate = (summary["success"] / total) * 100
-                    avg_coverage = sum(summary["line_coverage"]) / total
+                    
+                    success_count = summary["success"]
+                    pass_rate = (success_count / total) * 100
+
+                    cond_line_cov = sum(summary["line_coverage"]) / success_count if success_count > 0 else 0.0
+                    eff_line_cov = sum(summary["line_coverage"]) / total
 
                     final_summary.append({
                         "category": category,
                         "model": model_name,
                         "pass_rate": round(pass_rate, 2),
-                        "avg_line_coverage": round(avg_coverage, 2)
+                        "conditional_line_coverage": round(cond_line_cov, 2),
+                        "effective_line_coverage": round(eff_line_cov, 2)
                     })
 
             if not final_summary:
@@ -120,9 +125,9 @@ def generate_category_report():
                 writer.writeheader()
                 writer.writerows(final_summary)
 
-            markdown = "| Category | Model | Pass Rate | Avg Coverage |\n|---|---|---|---|\n"
+            markdown = "| Category | Model | Pass Rate | Cond Coverage | Eff Coverage |\n|---|---|---|---|---|\n"
             for row in final_summary:
-                markdown += f"| {row['category']} | {row['model']} | {row['pass_rate']}% | {row['avg_line_coverage']}% |\n"
+                markdown += f"| {row['category']} | {row['model']} | {row['pass_rate']}% | {row['conditional_line_coverage']}% | {row['effective_line_coverage']}% |\n"
 
             with open(category_report_path / "category_summary.md", "w", encoding="utf-8") as f:
                 f.write(markdown)

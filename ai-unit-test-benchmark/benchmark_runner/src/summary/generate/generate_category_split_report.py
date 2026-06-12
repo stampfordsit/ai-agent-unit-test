@@ -31,11 +31,21 @@ def _aggregate(reports: list[dict], label: str) -> dict:
 
     # Coverage — only for synthetic
     if not is_real_world:
-        result["avg_line_coverage_pct"] = round(mean([r.get("line_coverage", 0) for r in reports]), 2)
-        result["avg_branch_coverage_pct"] = round(mean([r.get("branch_coverage", 0) for r in reports]), 2)
+        passed = sum(1 for r in reports if r.get("success", False))
+        cond_line = sum(r.get("line_coverage", 0) for r in reports) / passed if passed > 0 else 0.0
+        eff_line = sum(r.get("line_coverage", 0) for r in reports) / len(reports)
+        cond_branch = sum(r.get("branch_coverage", 0) for r in reports) / passed if passed > 0 else 0.0
+        eff_branch = sum(r.get("branch_coverage", 0) for r in reports) / len(reports)
+
+        result["conditional_line_coverage_pct"] = round(cond_line, 2)
+        result["effective_line_coverage_pct"] = round(eff_line, 2)
+        result["conditional_branch_coverage_pct"] = round(cond_branch, 2)
+        result["effective_branch_coverage_pct"] = round(eff_branch, 2)
     else:
-        result["avg_line_coverage_pct"] = "N/A (execution skipped)"
-        result["avg_branch_coverage_pct"] = "N/A (execution skipped)"
+        result["conditional_line_coverage_pct"] = "N/A (execution skipped)"
+        result["effective_line_coverage_pct"] = "N/A (execution skipped)"
+        result["conditional_branch_coverage_pct"] = "N/A (execution skipped)"
+        result["effective_branch_coverage_pct"] = "N/A (execution skipped)"
 
     # Evaluator score — available for all categories
     scores = [r.get("evaluator_score", 0) for r in reports]

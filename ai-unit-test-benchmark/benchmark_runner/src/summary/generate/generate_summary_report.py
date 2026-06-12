@@ -37,7 +37,12 @@ def generate_summary_report():
                     "line_coverage": [],
                     "branch_coverage": [],
                     "mutation_score": [],
+                    "mut_total": [],
+                    "mut_killed": [],
+                    "mut_timeout": [],
+                    "mut_ignored": [],
                     "evaluator_score": [],
+                    "success_evaluator_score": [],
                     "healing_attempts": [],
                     "generation_time": [],
                     "cost": [],
@@ -73,12 +78,17 @@ def generate_summary_report():
 
                     if data.get("success", False):
                         summary["success"] += 1
-
+                        summary["success_evaluator_score"].append(data.get("evaluator_score", 0))
+                    
                     summary["line_coverage"].append(data.get("line_coverage", 0))
                     summary["branch_coverage"].append(data.get("branch_coverage", 0))
                     mut_score = data.get("mutation_score")
                     if mut_score is not None:
                         summary["mutation_score"].append(mut_score)
+                        summary["mut_total"].append(data.get("total_mutants", 0))
+                        summary["mut_killed"].append(data.get("killed_mutants", 0))
+                        summary["mut_timeout"].append(data.get("timeout_mutants", 0))
+                        summary["mut_ignored"].append(data.get("ignored_mutants", 0))
                     summary["evaluator_score"].append(data.get("evaluator_score", 0))
                     summary["healing_attempts"].append(data.get("healing_attempts", 0))
                     summary["generation_time"].append(data.get("generation_time", 0))
@@ -99,15 +109,42 @@ def generate_summary_report():
                     continue
 
                 mut_scores = summary["mutation_score"]
-                avg_mut = round(sum(mut_scores) / len(mut_scores), 2) if mut_scores else None
+                if mut_scores:
+                    sum_total = sum(summary["mut_total"])
+                    sum_killed = sum(summary["mut_killed"])
+                    sum_timeout = sum(summary["mut_timeout"])
+                    sum_ignored = sum(summary["mut_ignored"])
+                    active = sum_total - sum_ignored
+                    avg_mut = round(((sum_killed + sum_timeout) / active) * 100, 2) if active > 0 else 0.0
+                else:
+                    avg_mut = None
+
+                pass_rate = round((summary["success"] / total) * 100, 2)
+
+                # Coverage and Evaluator
+                success_count = summary["success"]
+                cond_line_cov = round(sum(summary["line_coverage"]) / success_count, 2) if success_count > 0 else 0.0
+                eff_line_cov = round(sum(summary["line_coverage"]) / total, 2)
+
+                cond_branch_cov = round(sum(summary["branch_coverage"]) / success_count, 2) if success_count > 0 else 0.0
+                eff_branch_cov = round(sum(summary["branch_coverage"]) / total, 2)
+
+                cond_eval_score = round(sum(summary.get("success_evaluator_score", [])) / success_count, 2) if success_count > 0 else 0.0
+                eff_eval_score = round(sum(summary["evaluator_score"]) / total, 2)
+
+                eff_mut = round((pass_rate / 100) * avg_mut, 2) if avg_mut is not None else None
 
                 final_summary.append({
                     "model": model_name,
-                    "pass_rate": round((summary["success"] / total) * 100, 2),
-                    "avg_line_coverage": round(sum(summary["line_coverage"]) / total, 2),
-                    "avg_branch_coverage": round(sum(summary["branch_coverage"]) / total, 2),
-                    "avg_mutation_score": avg_mut,
-                    "avg_evaluator_score": round(sum(summary["evaluator_score"]) / total, 2),
+                    "pass_rate": pass_rate,
+                    "conditional_line_coverage": cond_line_cov,
+                    "effective_line_coverage": eff_line_cov,
+                    "conditional_branch_coverage": cond_branch_cov,
+                    "effective_branch_coverage": eff_branch_cov,
+                    "conditional_mutation_score": avg_mut,
+                    "effective_mutation_score": eff_mut,
+                    "conditional_evaluator_score": cond_eval_score,
+                    "effective_evaluator_score": eff_eval_score,
                     "avg_healing_attempts": round(sum(summary["healing_attempts"]) / total, 2),
                     "avg_generation_time": round(sum(summary["generation_time"]) / total, 2),
                     "avg_cost": round(sum(summary["cost"]) / total, 6),
@@ -134,12 +171,14 @@ def generate_summary_report():
                 writer.writeheader()
                 writer.writerows(final_summary)
 
-            markdown = "| Model | Pass Rate | Avg Line Coverage | Avg Branch Coverage | Avg Mutation Score | Avg Evaluator Score | Avg Healing Attempts | Avg Time | Avg Cost | Total Cost | Avg Worker Cost | Avg Evaluator Cost | Avg Worker Latency | Avg Evaluator Latency | Avg Initial Line Cov | Avg Initial Branch Cov | Avg Initial Score | Avg Initial Pass Rate |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n"
+            markdown = "| Model | Pass Rate | Cond Line Cov | Eff Line Cov | Cond Branch Cov | Eff Branch Cov | Cond Mut Score | Eff Mut Score | Cond Eval Score | Eff Eval Score | Avg Healing Attempts | Avg Time | Avg Cost | Total Cost | Avg Worker Cost | Avg Evaluator Cost | Avg Worker Latency | Avg Evaluator Latency | Avg Initial Line Cov | Avg Initial Branch Cov | Avg Initial Score | Avg Initial Pass Rate |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n"
             for row in final_summary:
-                mut_score_str = f"{row['avg_mutation_score']}%" if row.get('avg_mutation_score') is not None else "N/A"
+                cond_mut_score_str = f"{row['conditional_mutation_score']}%" if row.get('conditional_mutation_score') is not None else "N/A"
+                eff_mut_score_str = f"{row['effective_mutation_score']}%" if row.get('effective_mutation_score') is not None else "N/A"
                 markdown += (
-                    f"| {row['model']} | {row['pass_rate']}% | {row['avg_line_coverage']}% "
-                    f"| {row['avg_branch_coverage']}% | {mut_score_str} | {row['avg_evaluator_score']} "
+                    f"| {row['model']} | {row['pass_rate']}% | {row['conditional_line_coverage']}% | {row['effective_line_coverage']}% "
+                    f"| {row['conditional_branch_coverage']}% | {row['effective_branch_coverage']}% | {cond_mut_score_str} | {eff_mut_score_str} "
+                    f"| {row['conditional_evaluator_score']} | {row['effective_evaluator_score']} "
                     f"| {row['avg_healing_attempts']} | {row['avg_generation_time']}s "
                     f"| ${row['avg_cost']} | ${row['total_cost']} "
                     f"| ${row['avg_worker_cost']} | ${row['avg_evaluator_cost']} "

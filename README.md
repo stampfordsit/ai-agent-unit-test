@@ -19,6 +19,10 @@
 - [Employee Management Demo](https://github.com/stampfordsit/ai-demo-employee-management-demo)
 - [Calculator Service Demo](https://github.com/stampfordsit/ai-demo-calculator-service-demo)
 
+## 🆕 การอัปเดตล่าสุด (Recent Updates)
+- **แยกการประเมินผล Conditional vs Effective Metrics**: ในหน้า Dashboard ของ Web App เพิ่มความสามารถในการแยกดูคะแนน (Coverage, Mutation Score, Evaluator Score) เฉพาะเคสที่ทำงานสำเร็จ (Conditional) แยกกับเคสทั้งหมดรวมถึงที่ Fail (Effective)
+- **เมนู Dataset ใหม่**: เพิ่มหน้าสำหรับดูตัวอย่าง C# Source Code คู่กับโค้ดทดสอบที่คาดหวัง และคำอธิบาย Schema ของตัวแปร JSON ที่ใช้ในการประเมินผล เพื่อความเข้าใจที่ชัดเจนยิ่งขึ้นในการทดสอบ AI
+
 ---
 
 > **Note:** สำหรับวิธีการรัน การติดตั้ง และคำแนะนำแบบละเอียดของแต่ละส่วน สามารถกดเข้าไปอ่านไฟล์ `README.md` ที่อยู่ในโฟลเดอร์ย่อยแต่ละโฟลเดอร์ได้เลยครับ!
